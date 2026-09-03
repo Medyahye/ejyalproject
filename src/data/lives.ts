@@ -1,0 +1,81 @@
+import { LiveSession, LiveChatMessage } from '../types';
+
+export const liveSessions: LiveSession[] = [
+  {
+    id: 'live-1',
+    title: 'Session Q&A : Débloquer vos projets React Native',
+    description: 'Posez toutes vos questions sur React Native, Expo et la publication sur les stores.',
+    teacherId: 'teacher-1',
+    teacherName: 'Sarah Lambert',
+    teacherAvatar: 'https://i.pravatar.cc/150?img=47',
+    courseId: 'course-1',
+    categoryName: 'Mobile',
+    scheduledAt: '2026-09-02T18:00:00',
+    durationMinutes: 60,
+    status: 'live',
+    viewersCount: 342,
+    thumbnail: 'https://picsum.photos/seed/live-rn/600/400',
+    coverGradient: ['#6C5CE7', '#4432B0'],
+  },
+  {
+    id: 'live-2',
+    title: 'Atelier pratique : Entraîner votre premier modèle ML',
+    description: 'Nous construirons ensemble un modèle de classification en direct avec scikit-learn.',
+    teacherId: 'teacher-2',
+    teacherName: 'Karim Benatia',
+    teacherAvatar: 'https://i.pravatar.cc/150?img=12',
+    courseId: 'course-2',
+    categoryName: 'Data Science',
+    scheduledAt: '2026-09-04T17:00:00',
+    durationMinutes: 90,
+    status: 'upcoming',
+    viewersCount: 0,
+    thumbnail: 'https://picsum.photos/seed/live-ml/600/400',
+    coverGradient: ['#3D7FF7', '#2C63D6'],
+  },
+  {
+    id: 'live-3',
+    title: 'Critique de portfolios Design en direct',
+    description: 'Envoyez votre portfolio et recevez des retours constructifs en direct.',
+    teacherId: 'teacher-3',
+    teacherName: 'Léa Moreau',
+    teacherAvatar: 'https://i.pravatar.cc/150?img=32',
+    courseId: 'course-3',
+    categoryName: 'Design UI/UX',
+    scheduledAt: '2026-09-06T19:30:00',
+    durationMinutes: 45,
+    status: 'upcoming',
+    viewersCount: 0,
+    thumbnail: 'https://picsum.photos/seed/live-design/600/400',
+    coverGradient: ['#FF6B6B', '#E64A4A'],
+  },
+  {
+    id: 'live-4',
+    title: 'Growth Hacking : Étude de cas en direct',
+    description: 'Analyse en direct d\'une campagne d\'acquisition qui a généré 100k utilisateurs.',
+    teacherId: 'teacher-4',
+    teacherName: 'Mehdi Ouali',
+    teacherAvatar: 'https://i.pravatar.cc/150?img=68',
+    courseId: 'course-5',
+    categoryName: 'Marketing Digital',
+    scheduledAt: '2026-08-28T18:00:00',
+    durationMinutes: 60,
+    status: 'ended',
+    viewersCount: 890,
+    thumbnail: 'https://picsum.photos/seed/live-growth/600/400',
+    coverGradient: ['#FDCB6E', '#E8A93C'],
+  },
+];
+
+export const liveChatMessages: LiveChatMessage[] = [
+  { id: 'chat-1', userName: 'Sarah Lambert', avatar: 'https://i.pravatar.cc/150?img=47', message: 'Bienvenue à toutes et tous ! On commence dans 1 minute 🎉', isTeacher: true, timestamp: '18:00' },
+  { id: 'chat-2', userName: 'Yasmine El Amrani', avatar: 'https://i.pravatar.cc/150?img=5', message: 'Hâte de voir ça, merci pour la session !', timestamp: '18:01' },
+  { id: 'chat-3', userName: 'Nicolas Petit', avatar: 'https://i.pravatar.cc/150?img=22', message: 'Est-ce que la session sera enregistrée ?', timestamp: '18:02' },
+  { id: 'chat-4', userName: 'Sarah Lambert', avatar: 'https://i.pravatar.cc/150?img=47', message: 'Oui, elle sera disponible en replay dans le cours 👍', isTeacher: true, timestamp: '18:03' },
+  { id: 'chat-5', userName: 'Fatima Zahra', avatar: 'https://i.pravatar.cc/150?img=9', message: 'Super, j\'ai justement une question sur la navigation', timestamp: '18:04' },
+  { id: 'chat-6', userName: 'Hugo Lefevre', avatar: 'https://i.pravatar.cc/150?img=33', message: 'Le son est parfait 🔊', timestamp: '18:05' },
+];
+
+export function getLivesByStatus(status: LiveSession['status']): LiveSession[] {
+  return liveSessions.filter((l) => l.status === status);
+}
