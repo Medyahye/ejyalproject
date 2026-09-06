@@ -30,6 +30,7 @@ export const IconButton: React.FC<IconButtonProps> = ({ icon, onPress, size = 40
           borderWidth: variant === 'outline' ? 1.5 : 0,
           borderColor: border,
           opacity: pressed ? 0.7 : 1,
+          transform: [{ scale: pressed ? 0.92 : 1 }],
           ...theme.shadow(variant === 'filled' ? 'sm' : 'none'),
         },
         style,

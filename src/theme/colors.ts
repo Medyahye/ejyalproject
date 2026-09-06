@@ -49,10 +49,10 @@ export const lightColors: ThemeColors = {
   textMuted: palette.gray400,
   textInverse: palette.white,
 
-  primary: palette.violet500,
-  primaryDark: palette.violet700,
-  primaryLight: palette.violet100,
-  primarySoft: palette.violet50,
+  primary: palette.blue500,
+  primaryDark: palette.blue700,
+  primaryLight: palette.blue100,
+  primarySoft: palette.blue50,
 
   secondary: palette.green500,
   secondaryLight: palette.green100,
@@ -61,8 +61,8 @@ export const lightColors: ThemeColors = {
   accent: palette.gold500,
   accentLight: palette.gold300,
 
-  info: palette.blue500,
-  infoLight: palette.blue400,
+  info: palette.blue400,
+  infoLight: palette.blue300,
 
   success: palette.green500,
   warning: palette.gold600,
@@ -72,10 +72,10 @@ export const lightColors: ThemeColors = {
   overlay: 'rgba(14, 14, 19, 0.55)',
   shadow: '#1B1B22',
 
-  gradientPrimary: [palette.violet500, palette.violet700] as const,
+  gradientPrimary: [palette.blue500, palette.green600] as const,
   gradientSecondary: [palette.green500, palette.green700] as const,
   gradientSunset: [palette.gold500, palette.red500] as const,
-  gradientOcean: [palette.blue500, palette.violet600] as const,
+  gradientOcean: [palette.blue500, palette.blue700] as const,
 };
 
 export const darkColors: ThemeColors = {
@@ -92,20 +92,20 @@ export const darkColors: ThemeColors = {
   textMuted: palette.gray500,
   textInverse: palette.gray900,
 
-  primary: palette.violet400,
-  primaryDark: palette.violet300,
-  primaryLight: palette.violet800,
-  primarySoft: palette.violet900,
+  primary: palette.blue400,
+  primaryDark: palette.blue300,
+  primaryLight: palette.blue800,
+  primarySoft: palette.blue900,
 
   secondary: palette.green300,
   secondaryLight: palette.green700,
-  secondarySoft: palette.violet900,
+  secondarySoft: palette.blue900,
 
   accent: palette.gold300,
   accentLight: palette.gold500,
 
-  info: palette.blue400,
-  infoLight: palette.blue500,
+  info: palette.blue300,
+  infoLight: palette.blue400,
 
   success: palette.green300,
   warning: palette.gold500,
@@ -115,8 +115,8 @@ export const darkColors: ThemeColors = {
   overlay: 'rgba(0, 0, 0, 0.65)',
   shadow: '#000000',
 
-  gradientPrimary: [palette.violet400, palette.violet600] as const,
+  gradientPrimary: [palette.blue400, palette.green600] as const,
   gradientSecondary: [palette.green300, palette.green600] as const,
   gradientSunset: [palette.gold500, palette.red500] as const,
-  gradientOcean: [palette.blue400, palette.violet500] as const,
+  gradientOcean: [palette.blue400, palette.blue600] as const,
 };

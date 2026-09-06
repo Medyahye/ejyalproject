@@ -9,7 +9,6 @@ import { useTeacherData } from '../../context/TeacherDataContext';
 import { ScreenContainer } from '../../components/layout';
 import { Avatar, Button, IconButton, SectionHeader } from '../../components/ui';
 import { CourseListItem } from '../../components/course';
-import { getPaymentsByTeacherCourses, monthlyRevenue } from '../../data';
 import { Teacher } from '../../types';
 import { formatPrice, formatCompactNumber, abbreviateMonth } from '../../utils/formatters';
 
@@ -19,13 +18,12 @@ export const DashboardScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
   const { user } = useAuth();
   const teacher = user as Teacher;
-  const { myCourses } = useTeacherData();
+  const { myCourses, payments, monthlyRevenue } = useTeacherData();
 
-  const payments = getPaymentsByTeacherCourses(myCourses.map((c) => c.id));
   const totalRevenue = payments.filter((p) => p.status === 'Réussi').reduce((sum, p) => sum + p.amount, 0);
   const totalStudents = myCourses.reduce((sum, c) => sum + c.studentsCount, 0);
   const avgRating = myCourses.length ? myCourses.reduce((sum, c) => sum + c.rating, 0) / myCourses.length : 0;
-  const maxRevenue = Math.max(...monthlyRevenue.map((m) => m.amount));
+  const maxRevenue = Math.max(...monthlyRevenue.map((m) => m.amount), 1);
 
   const stats: Array<{ icon: keyof typeof Ionicons.glyphMap; label: string; value: string; tone: string }> = [
     { icon: 'book-outline', label: 'Cours actifs', value: String(myCourses.length), tone: theme.colors.primary },

@@ -6,7 +6,7 @@ import { useTheme } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
 import { ScreenContainer } from '../../components/layout';
 import { Badge, Button, EmptyState, IconButton } from '../../components/ui';
-import { liveSessions } from '../../data';
+import { useLive } from '../../context/LiveContext';
 import { Teacher, LiveSession } from '../../types';
 import { formatDateTime } from '../../utils/formatters';
 
@@ -15,6 +15,7 @@ type Props = TeacherDrawerScreenProps<'TeacherLive'>;
 export const TeacherLiveScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
   const { user } = useAuth();
+  const { liveSessions } = useLive();
   const teacher = user as Teacher;
   const myLives = liveSessions.filter((l) => l.teacherId === teacher?.id);
 

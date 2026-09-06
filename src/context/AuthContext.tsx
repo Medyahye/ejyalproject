@@ -1,11 +1,17 @@
-import React, { createContext, useContext, useMemo, useState, useCallback } from 'react';
-import { AppUser, UserRole, Student, Teacher } from '../types';
-import { currentStudent } from '../data/students';
-import { currentTeacher } from '../data/teachers';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { AppUser, UserRole } from '../types';
+import { fetchMe, loginRequest, registerRequest, updateMe } from '../api/auth';
+import { clearAuthTokens, loadStoredTokens, setAuthFailureHandler } from '../api/client';
+
+const DEMO_CREDENTIALS: Record<UserRole, { email: string; password: string }> = {
+  student: { email: 'mariem.abdellahi@gmail.com', password: 'password123' },
+  teacher: { email: 'mohamed.sidiahmed@educonnect.mr', password: 'password123' },
+};
 
 interface RegisterPayload {
   fullName: string;
   email: string;
+  password: string;
   role: UserRole;
 }
 
@@ -13,11 +19,12 @@ interface AuthContextValue {
   user: AppUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string, role: UserRole) => Promise<void>;
-  loginAsDemo: (role: UserRole) => void;
+  isBootstrapping: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  loginAsDemo: (role: UserRole) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => void;
-  updateProfile: (updates: Partial<AppUser>) => void;
+  updateProfile: (updates: Partial<AppUser>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -25,57 +32,62 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
 
-  const login = useCallback(async (_email: string, _password: string, role: UserRole) => {
+  const logout = useCallback(() => {
+    setUser(null);
+    clearAuthTokens();
+  }, []);
+
+  useEffect(() => {
+    setAuthFailureHandler(() => setUser(null));
+    return () => setAuthFailureHandler(null);
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      const tokens = await loadStoredTokens();
+      if (tokens) {
+        try {
+          setUser(await fetchMe());
+        } catch {
+          await clearAuthTokens();
+        }
+      }
+      setIsBootstrapping(false);
+    })();
+  }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 900));
-    setUser(role === 'teacher' ? currentTeacher : currentStudent);
-    setIsLoading(false);
+    try {
+      setUser(await loginRequest(email, password));
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const loginAsDemo = useCallback((role: UserRole) => {
-    setUser(role === 'teacher' ? currentTeacher : currentStudent);
-  }, []);
+  const loginAsDemo = useCallback(async (role: UserRole) => {
+    const creds = DEMO_CREDENTIALS[role];
+    await login(creds.email, creds.password);
+  }, [login]);
 
   const register = useCallback(async (payload: RegisterPayload) => {
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 900));
-    if (payload.role === 'teacher') {
-      const newTeacher: Teacher = {
-        ...currentTeacher,
-        id: `teacher-${Date.now()}`,
-        fullName: payload.fullName,
-        email: payload.email,
-        courseIds: [],
-        totalStudents: 0,
-        totalRevenue: 0,
-        rating: 0,
-      };
-      setUser(newTeacher);
-    } else {
-      const newStudent: Student = {
-        ...currentStudent,
-        id: `student-${Date.now()}`,
-        fullName: payload.fullName,
-        email: payload.email,
-        enrolledCourseIds: [],
-        favoriteCourseIds: [],
-        purchasedCourseIds: [],
-      };
-      setUser(newStudent);
+    try {
+      setUser(await registerRequest(payload));
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
-  const logout = useCallback(() => setUser(null), []);
-
-  const updateProfile = useCallback((updates: Partial<AppUser>) => {
-    setUser((prev) => (prev ? ({ ...prev, ...updates } as AppUser) : prev));
+  const updateProfile = useCallback(async (updates: Partial<AppUser>) => {
+    setUser(await updateMe(updates));
   }, []);
 
   const value = useMemo(
-    () => ({ user, isAuthenticated: !!user, isLoading, login, loginAsDemo, register, logout, updateProfile }),
-    [user, isLoading, login, loginAsDemo, register, logout, updateProfile]
+    () => ({ user, isAuthenticated: !!user, isLoading, isBootstrapping, login, loginAsDemo, register, logout, updateProfile }),
+    [user, isLoading, isBootstrapping, login, loginAsDemo, register, logout, updateProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

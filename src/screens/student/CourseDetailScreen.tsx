@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,9 +7,11 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
 import { useStudentData } from '../../context/StudentDataContext';
+import { useCatalog } from '../../context/CatalogContext';
 import { Avatar, Badge, RatingStars, Button, IconButton } from '../../components/ui';
 import { ReviewItem } from '../../components/course';
-import { getCourseById, getReviewsByCourse } from '../../data';
+import { fetchCourseReviews } from '../../api/catalog';
+import { Review } from '../../types';
 import { formatPrice, formatDuration, formatDate } from '../../utils/formatters';
 import { StudentStackParamList } from '../../navigation/types';
 
@@ -23,12 +25,19 @@ export const CourseDetailScreen: React.FC = () => {
   const route = useRoute<DetailRoute>();
   const navigation = useNavigation<DetailNav>();
   const { isFavorite, toggleFavorite, isInCart, addToCart, isPurchased } = useStudentData();
+  const { getCourseById } = useCatalog();
   const [tab, setTab] = useState<Tab>('overview');
+  const [reviews, setReviews] = useState<Review[]>([]);
 
   const course = getCourseById(route.params.courseId);
+
+  useEffect(() => {
+    if (!course) return;
+    fetchCourseReviews(course.id).then(setReviews).catch(() => setReviews([]));
+  }, [course?.id]);
+
   if (!course) return null;
 
-  const reviews = getReviewsByCourse(course.id);
   const owned = isPurchased(course.id);
   const inCart = isInCart(course.id);
   const fav = isFavorite(course.id);

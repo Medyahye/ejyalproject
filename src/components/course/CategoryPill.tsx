@@ -20,6 +20,7 @@ export const CategoryPill: React.FC<CategoryPillProps> = ({ category, onPress, s
         {
           backgroundColor: selected ? category.color : theme.colors.card,
           opacity: pressed ? 0.9 : 1,
+          transform: [{ scale: pressed ? 0.96 : 1 }],
           ...theme.shadow('sm'),
         },
       ]}

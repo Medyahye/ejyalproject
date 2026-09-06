@@ -10,7 +10,7 @@ interface InputProps extends TextInputProps {
   isPassword?: boolean;
 }
 
-export const Input: React.FC<InputProps> = ({ label, error, icon, isPassword, style, ...rest }) => {
+export const Input: React.FC<InputProps> = ({ label, error, icon, isPassword, multiline, style, ...rest }) => {
   const { theme } = useTheme();
   const [focused, setFocused] = useState(false);
   const [secure, setSecure] = useState(!!isPassword);
@@ -21,17 +21,20 @@ export const Input: React.FC<InputProps> = ({ label, error, icon, isPassword, st
       <View
         style={[
           styles.inputRow,
+          multiline && styles.inputRowMultiline,
           {
             backgroundColor: theme.colors.backgroundAlt,
             borderColor: error ? theme.colors.danger : focused ? theme.colors.primary : theme.colors.border,
             borderRadius: theme.radius.md,
           },
+          focused && !error && theme.shadow('sm'),
         ]}
       >
-        {icon && <Ionicons name={icon} size={19} color={focused ? theme.colors.primary : theme.colors.textMuted} style={{ marginRight: 10 }} />}
+        {icon && <Ionicons name={icon} size={19} color={focused ? theme.colors.primary : theme.colors.textMuted} style={{ marginRight: 10, marginTop: multiline ? 2 : 0 }} />}
         <TextInput
           placeholderTextColor={theme.colors.textMuted}
-          style={[styles.input, { color: theme.colors.text }, style]}
+          style={[styles.input, multiline && styles.inputMultiline, { color: theme.colors.text }, style]}
+          multiline={multiline}
           secureTextEntry={secure}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
@@ -58,6 +61,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 52,
   },
+  inputRowMultiline: {
+    height: undefined,
+    minHeight: 100,
+    alignItems: 'flex-start',
+    paddingVertical: 14,
+  },
   input: { flex: 1, fontSize: 15, height: '100%' },
+  inputMultiline: { height: undefined, textAlignVertical: 'top' },
   error: { fontSize: 12, marginTop: 4, fontWeight: '600' },
 });

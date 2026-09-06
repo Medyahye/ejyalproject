@@ -6,7 +6,6 @@ import { useTheme } from '../../theme';
 import { useTeacherData } from '../../context/TeacherDataContext';
 import { ScreenContainer } from '../../components/layout';
 import { Avatar, EmptyState, IconButton } from '../../components/ui';
-import { getPaymentsByTeacherCourses } from '../../data';
 import { formatDate } from '../../utils/formatters';
 
 type Props = TeacherDrawerScreenProps<'EnrolledStudents'>;
@@ -18,13 +17,12 @@ function avatarForStudent(studentId: string): string {
 
 export const EnrolledStudentsScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
-  const { myCourses } = useTeacherData();
+  const { payments } = useTeacherData();
   const [query, setQuery] = useState('');
 
   const enrollments = useMemo(() => {
-    const payments = getPaymentsByTeacherCourses(myCourses.map((c) => c.id)).filter((p) => p.status === 'Réussi');
-    return payments.map((p) => ({ ...p, avatar: avatarForStudent(p.studentId) }));
-  }, [myCourses]);
+    return payments.filter((p) => p.status === 'Réussi').map((p) => ({ ...p, avatar: avatarForStudent(p.studentId) }));
+  }, [payments]);
 
   const filtered = enrollments.filter(
     (e) => e.studentName.toLowerCase().includes(query.toLowerCase()) || e.courseTitle.toLowerCase().includes(query.toLowerCase())

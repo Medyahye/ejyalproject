@@ -64,7 +64,7 @@ export const TeacherProfileScreen: React.FC<Props> = ({ navigation }) => {
         {isEditing ? (
           <View>
             <Input label="Titre professionnel" value={headline} onChangeText={setHeadline} placeholder="Ex : Ingénieur Full-Stack" />
-            <Input label="Bio" value={bio} onChangeText={setBio} multiline style={{ height: 90, textAlignVertical: 'top', paddingTop: 12 }} />
+            <Input label="Bio" value={bio} onChangeText={setBio} multiline />
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
               <Button label="Annuler" variant="outline" onPress={() => setIsEditing(false)} style={{ flex: 1 }} />
               <Button label="Enregistrer" onPress={handleSave} style={{ flex: 1 }} />

@@ -4,10 +4,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
 import { useStudentData } from '../../context/StudentDataContext';
+import { useCatalog } from '../../context/CatalogContext';
 import { ScreenContainer } from '../../components/layout';
 import { IconButton, EmptyState } from '../../components/ui';
 import { CourseListItem } from '../../components/course';
-import { getCourseById } from '../../data';
 import { StudentStackParamList } from '../../navigation/types';
 
 type Nav = NativeStackNavigationProp<StudentStackParamList>;
@@ -16,10 +16,11 @@ export const FavoritesScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<Nav>();
   const { favoriteIds } = useStudentData();
+  const { getCourseById } = useCatalog();
 
   const favCourses = useMemo(
     () => favoriteIds.map((id) => getCourseById(id)).filter((c): c is NonNullable<typeof c> => !!c),
-    [favoriteIds]
+    [favoriteIds, getCourseById]
   );
 
   return (

@@ -20,7 +20,10 @@ export const CourseListItem: React.FC<CourseListItemProps> = ({ course, onPress,
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.card, { backgroundColor: theme.colors.card, opacity: pressed ? 0.95 : 1, ...theme.shadow('sm') }]}
+      style={({ pressed }) => [
+        styles.card,
+        { backgroundColor: theme.colors.card, opacity: pressed ? 0.95 : 1, transform: [{ scale: pressed ? 0.985 : 1 }], ...theme.shadow('sm') },
+      ]}
     >
       <Image source={{ uri: course.thumbnail }} style={[styles.image, { borderRadius: theme.radius.md }]} />
       <View style={styles.body}>

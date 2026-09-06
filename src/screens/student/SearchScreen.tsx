@@ -6,14 +6,15 @@ import { useTheme } from '../../theme';
 import { ScreenContainer } from '../../components/layout';
 import { CourseListItem } from '../../components/course';
 import { EmptyState, Chip } from '../../components/ui';
-import { courses } from '../../data';
+import { useCatalog } from '../../context/CatalogContext';
 
 type Props = StudentStackScreenProps<'Search'>;
 
-const recentSearches = ['React Native', 'Machine Learning', 'Figma', 'SEO'];
+const recentSearches = ['Mathématiques Terminale', 'Physique-Chimie', 'Brevet Arabe', 'Concours ENA'];
 
 export const SearchScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
+  const { courses } = useCatalog();
   const [query, setQuery] = useState('');
 
   const results = useMemo(() => {
@@ -22,7 +23,7 @@ export const SearchScreen: React.FC<Props> = ({ navigation }) => {
     return courses.filter(
       (c) => c.title.toLowerCase().includes(q) || c.teacherName.toLowerCase().includes(q) || c.categoryName.toLowerCase().includes(q)
     );
-  }, [query]);
+  }, [courses, query]);
 
   return (
     <ScreenContainer edges={['top']}>

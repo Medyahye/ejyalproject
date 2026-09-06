@@ -6,7 +6,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../theme';
 import { ScreenContainer } from '../../components/layout';
 import { IconButton, EmptyState } from '../../components/ui';
-import { getCourseById } from '../../data';
+import { useCatalog } from '../../context/CatalogContext';
 import { CoursePdf } from '../../types';
 
 type PdfRoute = RouteProp<{ PdfLibrary: { courseId: string } }, 'PdfLibrary'>;
@@ -15,6 +15,7 @@ export const PdfLibraryScreen: React.FC = () => {
   const { theme } = useTheme();
   const route = useRoute<PdfRoute>();
   const navigation = useNavigation();
+  const { getCourseById } = useCatalog();
   const [downloaded, setDownloaded] = useState<Record<string, boolean>>({});
   const [downloading, setDownloading] = useState<string | null>(null);
 

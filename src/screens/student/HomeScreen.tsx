@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,11 +6,12 @@ import { StudentTabScreenProps } from '../../navigation/types';
 import { useTheme } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
 import { useStudentData } from '../../context/StudentDataContext';
+import { useCatalog } from '../../context/CatalogContext';
+import { useLive } from '../../context/LiveContext';
 import { ScreenContainer } from '../../components/layout';
 import { SectionHeader, IconButton } from '../../components/ui';
 import { CourseCard, CategoryPill } from '../../components/course';
 import { CourseCardSkeleton } from '../../components/ui/Skeleton';
-import { courses, categories, getLivesByStatus } from '../../data';
 import { Student } from '../../types';
 
 type Props = StudentTabScreenProps<'Home'>;
@@ -20,13 +21,9 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
   const student = user as Student;
   const { isFavorite, toggleFavorite } = useStudentData();
-  const [loading, setLoading] = useState(true);
-  const liveNow = getLivesByStatus('live')[0];
-
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 900);
-    return () => clearTimeout(t);
-  }, []);
+  const { courses, categories, loading } = useCatalog();
+  const { liveSessions } = useLive();
+  const liveNow = liveSessions.find((l) => l.status === 'live');
 
   const featured = courses.filter((c) => c.isFeatured);
   const bestsellers = courses.filter((c) => c.isBestseller);

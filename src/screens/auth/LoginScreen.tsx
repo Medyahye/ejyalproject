@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthStackParamList } from '../../navigation/types';
@@ -8,18 +8,34 @@ import { useAuth } from '../../context/AuthContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { UserRole } from '../../types';
+import { ApiError } from '../../api/client';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
   const { login, loginAsDemo, isLoading } = useAuth();
-  const [role, setRole] = useState<UserRole>('student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
-    await login(email || 'demo@educonnect.io', password || 'demo1234', role);
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Champs requis', 'Merci de renseigner votre e-mail et votre mot de passe.');
+      return;
+    }
+    try {
+      await login(email.trim(), password);
+    } catch (err) {
+      Alert.alert('Connexion impossible', err instanceof ApiError ? err.message : "Une erreur est survenue.");
+    }
+  };
+
+  const handleDemoLogin = async (demoRole: UserRole) => {
+    try {
+      await loginAsDemo(demoRole);
+    } catch (err) {
+      Alert.alert('Connexion impossible', err instanceof ApiError ? err.message : "Une erreur est survenue.");
+    }
   };
 
   return (
@@ -30,24 +46,6 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         </View>
         <Text style={[styles.title, { color: theme.colors.text }]}>Bon retour !</Text>
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>Connectez-vous pour continuer votre apprentissage</Text>
-
-        <View style={[styles.roleSwitch, { backgroundColor: theme.colors.backgroundAlt }]}>
-          {(['student', 'teacher'] as UserRole[]).map((r) => (
-            <Text
-              key={r}
-              onPress={() => setRole(r)}
-              style={[
-                styles.roleOption,
-                {
-                  backgroundColor: role === r ? theme.colors.primary : 'transparent',
-                  color: role === r ? theme.colors.textInverse : theme.colors.textSecondary,
-                },
-              ]}
-            >
-              {r === 'student' ? 'Étudiant' : 'Professeur'}
-            </Text>
-          ))}
-        </View>
 
         <Input label="Adresse e-mail" placeholder="vous@exemple.com" icon="mail-outline" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
         <Input label="Mot de passe" placeholder="••••••••" icon="lock-closed-outline" isPassword value={password} onChangeText={setPassword} />
@@ -68,10 +66,10 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           label="Continuer comme étudiant"
           variant="outline"
           icon="person-outline"
-          onPress={() => loginAsDemo('student')}
+          onPress={() => handleDemoLogin('student')}
           style={{ marginBottom: 12 }}
         />
-        <Button label="Continuer comme professeur" variant="outline" icon="easel-outline" onPress={() => loginAsDemo('teacher')} />
+        <Button label="Continuer comme professeur" variant="outline" icon="easel-outline" onPress={() => handleDemoLogin('teacher')} />
 
         <View style={styles.registerRow}>
           <Text style={{ color: theme.colors.textSecondary }}>Pas encore de compte ? </Text>
@@ -89,8 +87,6 @@ const styles = StyleSheet.create({
   logoCircle: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
   title: { fontSize: 26, fontWeight: '800', marginBottom: 6 },
   subtitle: { fontSize: 14, marginBottom: 24, lineHeight: 20 },
-  roleSwitch: { flexDirection: 'row', borderRadius: 14, padding: 4, marginBottom: 22 },
-  roleOption: { flex: 1, textAlign: 'center', paddingVertical: 10, borderRadius: 11, fontWeight: '700', fontSize: 13, overflow: 'hidden' },
   forgot: { textAlign: 'right', fontSize: 13, fontWeight: '700', marginBottom: 20, marginTop: 4 },
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 24 },
   divider: { flex: 1, height: 1 },

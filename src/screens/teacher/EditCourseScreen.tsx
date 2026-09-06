@@ -4,10 +4,11 @@ import type { RouteProp } from '@react-navigation/native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../theme';
 import { useTeacherData } from '../../context/TeacherDataContext';
+import { useCatalog } from '../../context/CatalogContext';
 import { ScreenContainer } from '../../components/layout';
 import { Input, Button, IconButton, Chip } from '../../components/ui';
-import { categories } from '../../data';
 import { CourseLevel } from '../../types';
+import { ApiError } from '../../api/client';
 
 type EditRoute = RouteProp<{ EditCourse: { courseId: string } }, 'EditCourse'>;
 const levels: CourseLevel[] = ['Débutant', 'Intermédiaire', 'Avancé'];
@@ -17,13 +18,14 @@ export const EditCourseScreen: React.FC = () => {
   const route = useRoute<EditRoute>();
   const navigation = useNavigation();
   const { courses, updateCourse, deleteCourse } = useTeacherData();
+  const { categories } = useCatalog();
 
   const course = courses.find((c) => c.id === route.params.courseId);
   const [title, setTitle] = useState(course?.title ?? '');
   const [subtitle, setSubtitle] = useState(course?.subtitle ?? '');
   const [description, setDescription] = useState(course?.description ?? '');
   const [price, setPrice] = useState(String(course?.price ?? ''));
-  const [categoryId, setCategoryId] = useState(course?.categoryId ?? categories[0].id);
+  const [categoryId, setCategoryId] = useState(course?.categoryId ?? categories[0]?.id);
   const [level, setLevel] = useState<CourseLevel>(course?.level ?? 'Débutant');
   const [submitting, setSubmitting] = useState(false);
 
@@ -31,19 +33,23 @@ export const EditCourseScreen: React.FC = () => {
 
   const handleSave = async () => {
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 700));
-    const category = categories.find((c) => c.id === categoryId)!;
-    updateCourse(course.id, {
-      title,
-      subtitle,
-      description,
-      price: Number(price) || course.price,
-      categoryId,
-      categoryName: category.name,
-      level,
-    });
-    setSubmitting(false);
-    Alert.alert('Modifications enregistrées', 'Votre cours a été mis à jour.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+    try {
+      const category = categories.find((c) => c.id === categoryId)!;
+      await updateCourse(course.id, {
+        title,
+        subtitle,
+        description,
+        price: Number(price) || course.price,
+        categoryId,
+        categoryName: category.name,
+        level,
+      });
+      Alert.alert('Modifications enregistrées', 'Votre cours a été mis à jour.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+    } catch (err) {
+      Alert.alert('Enregistrement impossible', err instanceof ApiError ? err.message : 'Une erreur est survenue.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleDelete = () => {
@@ -52,8 +58,8 @@ export const EditCourseScreen: React.FC = () => {
       {
         text: 'Supprimer',
         style: 'destructive',
-        onPress: () => {
-          deleteCourse(course.id);
+        onPress: async () => {
+          await deleteCourse(course.id);
           navigation.goBack();
         },
       },
@@ -70,7 +76,7 @@ export const EditCourseScreen: React.FC = () => {
 
       <Input label="Titre du cours" icon="text-outline" value={title} onChangeText={setTitle} />
       <Input label="Sous-titre" icon="chatbox-ellipses-outline" value={subtitle} onChangeText={setSubtitle} />
-      <Input label="Description" value={description} onChangeText={setDescription} multiline style={{ height: 100, textAlignVertical: 'top', paddingTop: 12 }} />
+      <Input label="Description" value={description} onChangeText={setDescription} multiline />
 
       <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>Catégorie</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
@@ -86,7 +92,7 @@ export const EditCourseScreen: React.FC = () => {
         ))}
       </ScrollView>
 
-      <Input label="Prix (€)" icon="pricetag-outline" keyboardType="decimal-pad" value={price} onChangeText={setPrice} />
+      <Input label="Prix (UM)" icon="pricetag-outline" keyboardType="decimal-pad" value={price} onChangeText={setPrice} />
 
       <Button label="Enregistrer les modifications" icon="checkmark-circle-outline" onPress={handleSave} loading={submitting} style={{ marginTop: 20 }} />
     </ScreenContainer>

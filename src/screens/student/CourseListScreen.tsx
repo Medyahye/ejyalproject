@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, FlatList, ScrollView } from 'react-native';
 import { StudentTabScreenProps } from '../../navigation/types';
 import { useTheme } from '../../theme';
 import { useStudentData } from '../../context/StudentDataContext';
+import { useCatalog } from '../../context/CatalogContext';
 import { ScreenContainer } from '../../components/layout';
 import { Chip, IconButton, EmptyState } from '../../components/ui';
 import { CourseListItem } from '../../components/course';
-import { courses, categories } from '../../data';
 import { CourseLevel } from '../../types';
 
 type Props = StudentTabScreenProps<'Explore'>;
@@ -16,6 +16,7 @@ const levels: CourseLevel[] = ['Débutant', 'Intermédiaire', 'Avancé'];
 export const CourseListScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
   const { isFavorite, toggleFavorite } = useStudentData();
+  const { courses, categories } = useCatalog();
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [level, setLevel] = useState<CourseLevel | null>(null);
   const [sortBy, setSortBy] = useState<'popular' | 'price' | 'rating'>('popular');
@@ -28,7 +29,7 @@ export const CourseListScreen: React.FC<Props> = ({ navigation }) => {
     if (sortBy === 'rating') list = [...list].sort((a, b) => b.rating - a.rating);
     if (sortBy === 'popular') list = [...list].sort((a, b) => b.studentsCount - a.studentsCount);
     return list;
-  }, [categoryId, level, sortBy]);
+  }, [courses, categoryId, level, sortBy]);
 
   return (
     <ScreenContainer edges={['top']}>

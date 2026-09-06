@@ -6,7 +6,7 @@ import { StudentTabScreenProps } from '../../navigation/types';
 import { useTheme } from '../../theme';
 import { ScreenContainer } from '../../components/layout';
 import { Avatar, Badge, EmptyState } from '../../components/ui';
-import { liveSessions } from '../../data';
+import { useLive } from '../../context/LiveContext';
 import { LiveSession } from '../../types';
 import { formatDateTime } from '../../utils/formatters';
 
@@ -14,6 +14,7 @@ type Props = StudentTabScreenProps<'Live'>;
 
 export const LiveListScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
+  const { liveSessions } = useLive();
   const live = liveSessions.filter((l) => l.status === 'live');
   const upcoming = liveSessions.filter((l) => l.status === 'upcoming');
   const ended = liveSessions.filter((l) => l.status === 'ended');

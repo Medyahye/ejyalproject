@@ -1,5 +1,5 @@
 export function formatPrice(value: number): string {
-  return `${value.toFixed(2).replace('.', ',')} €`;
+  return `${Math.round(value).toLocaleString('fr-FR')} UM`;
 }
 
 export function formatCompactNumber(value: number): string {

@@ -6,7 +6,6 @@ import { useTheme } from '../../theme';
 import { useTeacherData } from '../../context/TeacherDataContext';
 import { ScreenContainer } from '../../components/layout';
 import { Badge, IconButton } from '../../components/ui';
-import { getPaymentsByTeacherCourses, monthlyRevenue } from '../../data';
 import { formatPrice, formatDate, abbreviateMonth } from '../../utils/formatters';
 import { Payment } from '../../types';
 
@@ -20,12 +19,11 @@ const statusTone: Record<Payment['status'], 'success' | 'warning' | 'danger'> = 
 
 export const RevenueScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
-  const { myCourses } = useTeacherData();
-  const payments = getPaymentsByTeacherCourses(myCourses.map((c) => c.id));
+  const { payments, monthlyRevenue } = useTeacherData();
 
   const totalRevenue = payments.filter((p) => p.status === 'Réussi').reduce((sum, p) => sum + p.amount, 0);
   const pending = payments.filter((p) => p.status === 'En attente').reduce((sum, p) => sum + p.amount, 0);
-  const maxRevenue = Math.max(...monthlyRevenue.map((m) => m.amount));
+  const maxRevenue = Math.max(...monthlyRevenue.map((m) => m.amount), 1);
 
   return (
     <ScreenContainer edges={['top']}>

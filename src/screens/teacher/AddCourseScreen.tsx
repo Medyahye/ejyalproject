@@ -4,10 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../theme';
 import { useTeacherData } from '../../context/TeacherDataContext';
+import { useCatalog } from '../../context/CatalogContext';
 import { ScreenContainer } from '../../components/layout';
 import { Input, Button, IconButton, Chip } from '../../components/ui';
-import { categories } from '../../data';
 import { CourseLevel } from '../../types';
+import { ApiError } from '../../api/client';
 
 const levels: CourseLevel[] = ['Débutant', 'Intermédiaire', 'Avancé'];
 
@@ -15,40 +16,47 @@ export const AddCourseScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const { addCourse } = useTeacherData();
+  const { categories } = useCatalog();
 
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [categoryId, setCategoryId] = useState(categories[0].id);
+  const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
   const [level, setLevel] = useState<CourseLevel>('Débutant');
   const [videos, setVideos] = useState<string[]>([]);
   const [pdfs, setPdfs] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
+  const activeCategoryId = categoryId ?? categories[0]?.id;
+
   const addMockVideo = () => setVideos((v) => [...v, `Leçon ${v.length + 1}.mp4`]);
   const addMockPdf = () => setPdfs((p) => [...p, `Support ${p.length + 1}.pdf`]);
 
   const handlePublish = async () => {
-    if (!title.trim() || !price.trim()) {
+    if (!title.trim() || !price.trim() || !activeCategoryId) {
       Alert.alert('Champs requis', 'Merci de renseigner au moins le titre et le prix.');
       return;
     }
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 900));
-    const category = categories.find((c) => c.id === categoryId)!;
-    addCourse({
-      title,
-      subtitle: subtitle || 'Nouveau cours',
-      description: description || 'Description à venir.',
-      categoryId,
-      categoryName: category.name,
-      price: Number(price) || 0,
-      level,
-      thumbnail: '',
-    });
-    setSubmitting(false);
-    Alert.alert('Cours créé 🎉', 'Votre cours a été publié avec succès.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+    try {
+      const category = categories.find((c) => c.id === activeCategoryId)!;
+      await addCourse({
+        title,
+        subtitle: subtitle || 'Nouveau cours',
+        description: description || 'Description à venir.',
+        categoryId: activeCategoryId,
+        categoryName: category.name,
+        price: Number(price) || 0,
+        level,
+        thumbnail: '',
+      });
+      Alert.alert('Cours créé 🎉', 'Votre cours a été publié avec succès.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+    } catch (err) {
+      Alert.alert('Publication impossible', err instanceof ApiError ? err.message : 'Une erreur est survenue.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -58,7 +66,7 @@ export const AddCourseScreen: React.FC = () => {
         <Text style={[styles.title, { color: theme.colors.text }]}>Ajouter un cours</Text>
       </View>
 
-      <Input label="Titre du cours" placeholder="Ex : React Native de Zéro à Expert" icon="text-outline" value={title} onChangeText={setTitle} />
+      <Input label="Titre du cours" placeholder="Ex : Mathématiques Terminale Série C" icon="text-outline" value={title} onChangeText={setTitle} />
       <Input label="Sous-titre" placeholder="Une phrase accrocheuse" icon="chatbox-ellipses-outline" value={subtitle} onChangeText={setSubtitle} />
       <Input
         label="Description"
@@ -66,13 +74,12 @@ export const AddCourseScreen: React.FC = () => {
         value={description}
         onChangeText={setDescription}
         multiline
-        style={{ height: 100, textAlignVertical: 'top', paddingTop: 12 }}
       />
 
       <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>Catégorie</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
         {categories.map((cat) => (
-          <Chip key={cat.id} label={cat.name} selected={categoryId === cat.id} onPress={() => setCategoryId(cat.id)} />
+          <Chip key={cat.id} label={cat.name} selected={activeCategoryId === cat.id} onPress={() => setCategoryId(cat.id)} />
         ))}
       </ScrollView>
 
@@ -83,7 +90,7 @@ export const AddCourseScreen: React.FC = () => {
         ))}
       </ScrollView>
 
-      <Input label="Prix (€)" placeholder="49.99" icon="pricetag-outline" keyboardType="decimal-pad" value={price} onChangeText={setPrice} />
+      <Input label="Prix (UM)" placeholder="1500" icon="pricetag-outline" keyboardType="decimal-pad" value={price} onChangeText={setPrice} />
 
       <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>Contenu du cours</Text>
       <Pressable onPress={addMockVideo} style={[styles.uploadBtn, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>

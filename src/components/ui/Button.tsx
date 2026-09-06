@@ -84,12 +84,20 @@ export const Button: React.FC<ButtonProps> = ({
 
   if (variant === 'primary') {
     return (
-      <Pressable onPress={onPress} disabled={isDisabled} style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }, fullWidth && { alignSelf: 'stretch' }]}>
+      <Pressable
+        onPress={onPress}
+        disabled={isDisabled}
+        style={({ pressed }) => [
+          !isDisabled && theme.shadow('md'),
+          { opacity: isDisabled ? 0.55 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
+          fullWidth && { alignSelf: 'stretch' },
+        ]}
+      >
         <LinearGradient
           colors={theme.colors.gradientPrimary}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[styles.base, { paddingVertical: paddingV, opacity: isDisabled ? 0.55 : 1 }, style]}
+          style={[styles.base, { paddingVertical: paddingV }, style]}
         >
           {content}
         </LinearGradient>
@@ -98,7 +106,11 @@ export const Button: React.FC<ButtonProps> = ({
   }
 
   return (
-    <Pressable onPress={onPress} disabled={isDisabled} style={({ pressed }) => [baseStyle, { opacity: pressed ? 0.85 : isDisabled ? 0.55 : 1 }]}>
+    <Pressable
+      onPress={onPress}
+      disabled={isDisabled}
+      style={({ pressed }) => [baseStyle, { opacity: isDisabled ? 0.55 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
+    >
       {content}
     </Pressable>
   );

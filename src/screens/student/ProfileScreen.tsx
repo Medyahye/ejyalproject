@@ -69,7 +69,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.content}>
         {isEditing ? (
           <View>
-            <Input label="Bio" value={bio} onChangeText={setBio} placeholder="Parlez de vous..." multiline style={{ height: 80, textAlignVertical: 'top', paddingTop: 12 }} />
+            <Input label="Bio" value={bio} onChangeText={setBio} placeholder="Parlez de vous..." multiline />
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
               <Button label="Annuler" variant="outline" onPress={() => setIsEditing(false)} style={{ flex: 1 }} />
               <Button label="Enregistrer" onPress={handleSave} style={{ flex: 1 }} />

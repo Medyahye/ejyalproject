@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { StudentTabScreenProps } from '../../navigation/types';
 import { useTheme } from '../../theme';
 import { useStudentData } from '../../context/StudentDataContext';
+import { useCatalog } from '../../context/CatalogContext';
 import { ScreenContainer } from '../../components/layout';
 import { Chip, EmptyState } from '../../components/ui';
 import { CourseListItem } from '../../components/course';
-import { getCourseById } from '../../data';
 
 type Props = StudentTabScreenProps<'MyCourses'>;
 type FilterTab = 'all' | 'inprogress' | 'completed';
@@ -14,11 +14,12 @@ type FilterTab = 'all' | 'inprogress' | 'completed';
 export const MyCoursesScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
   const { purchasedCourseIds, courseProgress } = useStudentData();
+  const { getCourseById } = useCatalog();
   const [tab, setTab] = useState<FilterTab>('all');
 
   const myCourses = useMemo(
     () => purchasedCourseIds.map((id) => getCourseById(id)).filter((c): c is NonNullable<typeof c> => !!c),
-    [purchasedCourseIds]
+    [purchasedCourseIds, getCourseById]
   );
 
   const filtered = useMemo(() => {

@@ -23,7 +23,13 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course, onPress, onToggl
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
-        { width, backgroundColor: theme.colors.card, opacity: pressed ? 0.95 : 1, ...theme.shadow('sm') },
+        {
+          width,
+          backgroundColor: theme.colors.card,
+          opacity: pressed ? 0.95 : 1,
+          transform: [{ scale: pressed ? 0.98 : 1 }],
+          ...theme.shadow('sm'),
+        },
       ]}
     >
       <View>

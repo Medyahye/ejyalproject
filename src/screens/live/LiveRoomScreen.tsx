@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, Pressable, FlatList, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,7 +6,8 @@ import type { RouteProp } from '@react-navigation/native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../theme';
 import { Avatar, Badge } from '../../components/ui';
-import { liveSessions, liveChatMessages } from '../../data';
+import { useLive } from '../../context/LiveContext';
+import { fetchLiveChat, postLiveChatMessage } from '../../api/live';
 import { LiveChatMessage } from '../../types';
 
 type RoomRoute = RouteProp<{ LiveRoom: { liveId: string } }, 'LiveRoom'>;
@@ -15,20 +16,28 @@ export const LiveRoomScreen: React.FC = () => {
   const { theme } = useTheme();
   const route = useRoute<RoomRoute>();
   const navigation = useNavigation();
-  const [messages, setMessages] = useState<LiveChatMessage[]>(liveChatMessages);
+  const { liveSessions } = useLive();
+  const [messages, setMessages] = useState<LiveChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [reactions, setReactions] = useState(0);
 
   const live = liveSessions.find((l) => l.id === route.params.liveId) ?? liveSessions[0];
-  const isLive = live.status === 'live';
+  const isLive = live?.status === 'live';
+
+  useEffect(() => {
+    if (!live) return;
+    fetchLiveChat(live.id).then(setMessages).catch(() => setMessages([]));
+  }, [live?.id]);
+
+  if (!live) return null;
 
   const sendMessage = () => {
     if (!input.trim()) return;
-    setMessages((prev) => [
-      ...prev,
-      { id: `chat-${Date.now()}`, userName: 'Vous', avatar: 'https://i.pravatar.cc/150?img=5', message: input.trim(), timestamp: 'maintenant' },
-    ]);
+    const text = input.trim();
     setInput('');
+    postLiveChatMessage(live.id, text)
+      .then((sent) => setMessages((prev) => [...prev, sent]))
+      .catch(() => {});
   };
 
   return (

@@ -21,6 +21,8 @@ export const Chip: React.FC<ChipProps> = ({ label, selected = false, onPress, ic
           backgroundColor: selected ? theme.colors.primary : theme.colors.backgroundAlt,
           borderColor: selected ? theme.colors.primary : theme.colors.border,
           opacity: pressed ? 0.85 : 1,
+          transform: [{ scale: pressed ? 0.96 : 1 }],
+          ...(selected ? theme.shadow('sm') : null),
         },
       ]}
     >

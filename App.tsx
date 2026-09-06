@@ -1,17 +1,25 @@
 import React from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from './src/theme';
-import { AuthProvider } from './src/context/AuthContext';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
 
 const AppContent: React.FC = () => {
-  const { isDark } = useTheme();
+  const { theme, isDark } = useTheme();
+  const { isBootstrapping } = useAuth();
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <RootNavigator />
+      {isBootstrapping ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background }}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      ) : (
+        <RootNavigator />
+      )}
     </>
   );
 };

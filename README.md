@@ -1,6 +1,6 @@
 # EduConnect
 
-Application mobile de formation en ligne (front-end uniquement) construite avec **React Native + Expo + TypeScript**. Toutes les données sont simulées (mock data) — aucun backend n'est requis pour lancer et utiliser l'application.
+Application mobile de formation en ligne construite avec **React Native + Expo + TypeScript**, avec un backend **Django REST Framework + PostgreSQL** dans [`backend/`](backend/README.md). Le front peut aussi tourner seul avec les données simulées (mock data) — voir ci-dessous.
 
 ## Lancer le projet
 
@@ -39,8 +39,14 @@ src/
 - **Professeur** : Dashboard, Mes cours (CRUD), Ajouter/Modifier un cours, Statistiques, Revenus, Étudiants inscrits, Profil — via un Drawer personnalisé.
 - **Live** : Liste des lives, salle de live (avec chat intégré), planification d'un live — interface uniquement, aucun flux vidéo réel.
 
-## Connexion à un futur backend
+## Backend (Django + PostgreSQL)
 
-Le code est structuré pour être facilement branché à une API réelle (ex. Django + PostgreSQL) :
-- `src/data/*` peut être remplacé par des appels API sans changer les écrans (mêmes formes de types dans `src/types`).
-- `src/context/*` centralise déjà la logique métier (auth, panier, favoris, achats, CRUD cours) — il suffit d'y substituer les mutations locales par des requêtes réseau.
+Un backend complet vit dans [`backend/`](backend/README.md) et expose une API REST dont les réponses JSON correspondent exactement aux types de `src/types/index.ts` (mêmes clés camelCase). Pour le lancer :
+
+```bash
+docker compose up -d --build
+```
+
+Voir [`backend/README.md`](backend/README.md) pour la liste des endpoints, les comptes de démo, et le lancement sans Docker.
+
+`src/data/*` et `src/context/*` peuvent être branchés sur cette API en substituant les mutations locales par des appels réseau (fetch/axios) vers `http://localhost:8000/api/...` — les formes de données sont déjà identiques, aucun changement d'écran n'est nécessaire.

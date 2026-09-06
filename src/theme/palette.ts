@@ -1,18 +1,17 @@
 // Raw color primitives. Semantic mapping happens in colors.ts.
 export const palette = {
-  // Primary — violet, premium EdTech feel (Udemy/Coursera inspired)
-  violet50: '#F3F1FE',
-  violet100: '#E6E1FD',
-  violet200: '#C9BEFB',
-  violet300: '#A896F8',
-  violet400: '#8A72F3',
-  violet500: '#6C5CE7',
-  violet600: '#5642D6',
-  violet700: '#4432B0',
-  violet800: '#33257F',
-  violet900: '#221A54',
+  // Primary — blue, trustworthy institutional feel for a school brand
+  blue50: '#EAF2FF',
+  blue100: '#D3E4FE',
+  blue300: '#8FBBFC',
+  blue400: '#5B9CFF',
+  blue500: '#3D7FF7',
+  blue600: '#2C63D6',
+  blue700: '#2350AC',
+  blue800: '#1B3D82',
+  blue900: '#142C5E',
 
-  // Secondary — teal/green, Duolingo-esque energy for success & CTAs
+  // Secondary — teal/green, growth & success (pairs with blue for the school brand)
   green50: '#E8FBF4',
   green100: '#C7F5E4',
   green300: '#5FE0B3',
@@ -29,11 +28,6 @@ export const palette = {
   red300: '#FFB3B3',
   red500: '#FF6B6B',
   red600: '#E64A4A',
-
-  // Info / blue (video, live)
-  blue400: '#5B9CFF',
-  blue500: '#3D7FF7',
-  blue600: '#2C63D6',
 
   // Neutrals — Notion-like grayscale
   white: '#FFFFFF',

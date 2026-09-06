@@ -7,8 +7,8 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
 import { useStudentData } from '../../context/StudentDataContext';
+import { useCatalog } from '../../context/CatalogContext';
 import { ProgressBar } from '../../components/ui';
-import { getCourseById } from '../../data';
 import { StudentStackParamList } from '../../navigation/types';
 
 type PlayerRoute = RouteProp<{ VideoPlayer: { courseId: string; lessonId?: string } }, 'VideoPlayer'>;
@@ -19,6 +19,7 @@ export const VideoPlayerScreen: React.FC = () => {
   const route = useRoute<PlayerRoute>();
   const navigation = useNavigation<PlayerNav>();
   const { setCourseProgress } = useStudentData();
+  const { getCourseById } = useCatalog();
 
   const course = getCourseById(route.params.courseId);
   const initialIndex = useMemo(

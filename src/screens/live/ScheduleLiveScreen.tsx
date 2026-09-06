@@ -3,15 +3,29 @@ import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
+import { useCatalog } from '../../context/CatalogContext';
+import { useLive } from '../../context/LiveContext';
 import { ScreenContainer } from '../../components/layout';
 import { Input, Button, IconButton, Chip } from '../../components/ui';
-import { courses } from '../../data';
 import { Teacher } from '../../types';
+import { ApiError } from '../../api/client';
+
+function parseDateTime(date: string, time: string): string | null {
+  const dateMatch = date.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const timeMatch = time.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!dateMatch || !timeMatch) return null;
+  const [, day, month, year] = dateMatch;
+  const [, hour, minute] = timeMatch;
+  const d = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
 
 export const ScheduleLiveScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const { user } = useAuth();
+  const { courses } = useCatalog();
+  const { createLiveSession } = useLive();
   const teacher = user as Teacher;
   const myCourses = courses.filter((c) => c.teacherId === teacher?.id);
 
@@ -28,12 +42,30 @@ export const ScheduleLiveScreen: React.FC = () => {
       Alert.alert('Champs requis', 'Merci de renseigner au moins le titre, la date et l\'heure.');
       return;
     }
+    const scheduledAt = parseDateTime(date, time);
+    if (!scheduledAt) {
+      Alert.alert('Date invalide', 'Utilisez le format JJ/MM/AAAA pour la date et HH:MM pour l\'heure.');
+      return;
+    }
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 900));
-    setSubmitting(false);
-    Alert.alert('Live planifié 🎉', `"${title}" est programmé le ${date} à ${time}.`, [
-      { text: 'OK', onPress: () => navigation.goBack() },
-    ]);
+    try {
+      const selectedCourse = myCourses.find((c) => c.id === selectedCourseId);
+      await createLiveSession({
+        title,
+        description,
+        courseId: selectedCourseId,
+        categoryName: selectedCourse?.categoryName ?? '',
+        scheduledAt,
+        durationMinutes: Number(duration) || 60,
+      });
+      Alert.alert('Live planifié 🎉', `"${title}" est programmé le ${date} à ${time}.`, [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+    } catch (err) {
+      Alert.alert('Planification impossible', err instanceof ApiError ? err.message : 'Une erreur est survenue.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -43,14 +75,13 @@ export const ScheduleLiveScreen: React.FC = () => {
         <Text style={[styles.title, { color: theme.colors.text }]}>Planifier un live</Text>
       </View>
 
-      <Input label="Titre de la session" placeholder="Ex : Session Q&A React Native" icon="radio-outline" value={title} onChangeText={setTitle} />
+      <Input label="Titre de la session" placeholder="Ex : Session Q&A Mathématiques Terminale" icon="radio-outline" value={title} onChangeText={setTitle} />
       <Input
         label="Description"
         placeholder="Décrivez le contenu de votre session..."
         value={description}
         onChangeText={setDescription}
         multiline
-        style={{ height: 90, textAlignVertical: 'top', paddingTop: 12 }}
       />
 
       <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>Cours associé</Text>

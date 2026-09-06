@@ -1,7 +1,10 @@
-import React, { createContext, useContext, useMemo, useState, useCallback } from 'react';
-import { Course } from '../types';
-import { courses as mockCourses } from '../data/courses';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { Course, Payment } from '../types';
+import { createCourse, deleteCourseRequest, updateCourseRequest } from '../api/catalog';
+import { fetchPayments } from '../api/commerce';
+import { computeMonthlyRevenue, MonthlyRevenue } from '../utils/analytics';
 import { useAuth } from './AuthContext';
+import { useCatalog } from './CatalogContext';
 
 interface NewCoursePayload {
   title: string;
@@ -17,9 +20,11 @@ interface NewCoursePayload {
 interface TeacherDataContextValue {
   courses: Course[];
   myCourses: Course[];
-  addCourse: (payload: NewCoursePayload) => Course;
-  updateCourse: (courseId: string, updates: Partial<Course>) => void;
-  deleteCourse: (courseId: string) => void;
+  addCourse: (payload: NewCoursePayload) => Promise<Course>;
+  updateCourse: (courseId: string, updates: Partial<Course>) => Promise<void>;
+  deleteCourse: (courseId: string) => Promise<void>;
+  payments: Payment[];
+  monthlyRevenue: MonthlyRevenue[];
 }
 
 const TeacherDataContext = createContext<TeacherDataContextValue | undefined>(undefined);
@@ -34,7 +39,12 @@ const GRADIENTS: Array<readonly [string, string]> = [
 
 export const TeacherDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const [courses, setCourses] = useState<Course[]>(mockCourses);
+  const { courses, refresh: refreshCatalog } = useCatalog();
+  const [payments, setPayments] = useState<Payment[]>([]);
+
+  useEffect(() => {
+    fetchPayments().then(setPayments).catch(() => setPayments([]));
+  }, []);
 
   const myCourses = useMemo(() => {
     if (!user || user.role !== 'teacher') return [];
@@ -42,51 +52,44 @@ export const TeacherDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [courses, user]);
 
   const addCourse = useCallback(
-    (payload: NewCoursePayload) => {
-      const newCourse: Course = {
-        id: `course-${Date.now()}`,
+    async (payload: NewCoursePayload) => {
+      const created = await createCourse({
         title: payload.title,
         subtitle: payload.subtitle,
         description: payload.description,
+        categoryId: payload.categoryId,
+        price: payload.price,
+        level: payload.level,
         thumbnail: payload.thumbnail || `https://picsum.photos/seed/${Date.now()}/600/400`,
         coverGradient: GRADIENTS[Math.floor(Math.random() * GRADIENTS.length)],
-        teacherId: user?.id ?? 'teacher-1',
-        teacherName: user?.fullName ?? 'Vous',
-        teacherAvatar: user?.avatar ?? '',
-        categoryId: payload.categoryId,
-        categoryName: payload.categoryName,
-        price: payload.price,
-        rating: 0,
-        ratingCount: 0,
-        studentsCount: 0,
-        level: payload.level,
-        language: 'Français',
-        durationHours: 0,
-        lastUpdated: new Date().toISOString().slice(0, 10),
-        lessons: [],
-        pdfs: [],
-        whatYouWillLearn: [],
-        requirements: [],
-        isFeatured: false,
-        isBestseller: false,
-      };
-      setCourses((prev) => [newCourse, ...prev]);
-      return newCourse;
+      });
+      await refreshCatalog();
+      return created;
     },
-    [user]
+    [refreshCatalog]
   );
 
-  const updateCourse = useCallback((courseId: string, updates: Partial<Course>) => {
-    setCourses((prev) => prev.map((c) => (c.id === courseId ? { ...c, ...updates } : c)));
-  }, []);
+  const updateCourse = useCallback(
+    async (courseId: string, updates: Partial<Course>) => {
+      await updateCourseRequest(courseId, updates);
+      await refreshCatalog();
+    },
+    [refreshCatalog]
+  );
 
-  const deleteCourse = useCallback((courseId: string) => {
-    setCourses((prev) => prev.filter((c) => c.id !== courseId));
-  }, []);
+  const deleteCourse = useCallback(
+    async (courseId: string) => {
+      await deleteCourseRequest(courseId);
+      await refreshCatalog();
+    },
+    [refreshCatalog]
+  );
+
+  const monthlyRevenue = useMemo(() => computeMonthlyRevenue(payments), [payments]);
 
   const value = useMemo(
-    () => ({ courses, myCourses, addCourse, updateCourse, deleteCourse }),
-    [courses, myCourses, addCourse, updateCourse, deleteCourse]
+    () => ({ courses, myCourses, addCourse, updateCourse, deleteCourse, payments, monthlyRevenue }),
+    [courses, myCourses, addCourse, updateCourse, deleteCourse, payments, monthlyRevenue]
   );
 
   return <TeacherDataContext.Provider value={value}>{children}</TeacherDataContext.Provider>;

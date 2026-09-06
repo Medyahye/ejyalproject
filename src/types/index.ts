@@ -103,7 +103,7 @@ export interface Payment {
   studentName: string;
   amount: number;
   date: string;
-  method: 'Carte bancaire' | 'PayPal' | 'Mobile Money';
+  method: 'Bankily' | 'Masrvi' | 'Sedad' | 'Click';
   status: 'Réussi' | 'En attente' | 'Échoué';
 }
 

@@ -6,14 +6,13 @@ import { useTheme } from '../../theme';
 import { useTeacherData } from '../../context/TeacherDataContext';
 import { ScreenContainer } from '../../components/layout';
 import { IconButton, ProgressBar } from '../../components/ui';
-import { monthlyRevenue } from '../../data';
 import { formatCompactNumber } from '../../utils/formatters';
 
 type Props = TeacherDrawerScreenProps<'Statistics'>;
 
 export const StatisticsScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
-  const { myCourses } = useTeacherData();
+  const { myCourses, monthlyRevenue } = useTeacherData();
 
   const totalStudents = myCourses.reduce((sum, c) => sum + c.studentsCount, 0);
   const totalReviews = myCourses.reduce((sum, c) => sum + c.ratingCount, 0);
@@ -82,9 +81,9 @@ export const StatisticsScreen: React.FC<Props> = ({ navigation }) => {
           <View key={m.month} style={styles.trendRow}>
             <Text style={[styles.trendMonth, { color: theme.colors.textSecondary }]}>{m.month}</Text>
             <View style={{ flex: 1, marginHorizontal: 10 }}>
-              <ProgressBar progress={m.amount / Math.max(...monthlyRevenue.map((r) => r.amount))} color={theme.colors.secondary} height={7} />
+              <ProgressBar progress={m.amount / Math.max(...monthlyRevenue.map((r) => r.amount), 1)} color={theme.colors.secondary} height={7} />
             </View>
-            <Text style={[styles.trendValue, { color: theme.colors.text }]}>{formatCompactNumber(m.amount)} €</Text>
+            <Text style={[styles.trendValue, { color: theme.colors.text }]}>{formatCompactNumber(m.amount)} UM</Text>
           </View>
         ))}
       </View>

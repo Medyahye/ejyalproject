@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthStackParamList } from '../../navigation/types';
@@ -9,6 +9,7 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { IconButton } from '../../components/ui/IconButton';
 import { UserRole } from '../../types';
+import { ApiError } from '../../api/client';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
@@ -21,7 +22,15 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [password, setPassword] = useState('');
 
   const handleRegister = async () => {
-    await register({ fullName: fullName || 'Nouvel utilisateur', email: email || 'nouveau@educonnect.io', role });
+    if (!fullName.trim() || !email.trim() || password.length < 6) {
+      Alert.alert('Champs requis', 'Merci de renseigner votre nom, votre e-mail et un mot de passe d\'au moins 6 caractères.');
+      return;
+    }
+    try {
+      await register({ fullName: fullName.trim(), email: email.trim(), password, role });
+    } catch (err) {
+      Alert.alert('Inscription impossible', err instanceof ApiError ? err.message : "Une erreur est survenue.");
+    }
   };
 
   return (

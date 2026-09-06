@@ -7,6 +7,8 @@ import { StudentStackNavigator } from './StudentStackNavigator';
 import { TeacherStackNavigator } from './TeacherStackNavigator';
 import { StudentDataProvider } from '../context/StudentDataContext';
 import { TeacherDataProvider } from '../context/TeacherDataContext';
+import { CatalogProvider } from '../context/CatalogContext';
+import { LiveProvider } from '../context/LiveContext';
 
 export const RootNavigator: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
@@ -28,14 +30,20 @@ export const RootNavigator: React.FC = () => {
     <NavigationContainer theme={navTheme}>
       {!isAuthenticated ? (
         <AuthNavigator />
-      ) : user?.role === 'teacher' ? (
-        <TeacherDataProvider>
-          <TeacherStackNavigator />
-        </TeacherDataProvider>
       ) : (
-        <StudentDataProvider>
-          <StudentStackNavigator />
-        </StudentDataProvider>
+        <CatalogProvider>
+          <LiveProvider>
+            {user?.role === 'teacher' ? (
+              <TeacherDataProvider>
+                <TeacherStackNavigator />
+              </TeacherDataProvider>
+            ) : (
+              <StudentDataProvider>
+                <StudentStackNavigator />
+              </StudentDataProvider>
+            )}
+          </LiveProvider>
+        </CatalogProvider>
       )}
     </NavigationContainer>
   );
