@@ -15,6 +15,15 @@ export const Input: React.FC<InputProps> = ({ label, error, icon, isPassword, mu
   const [focused, setFocused] = useState(false);
   const [secure, setSecure] = useState(!!isPassword);
 
+  const activeShadow = focused && !error;
+  const shadowStyle = theme.shadow('sm') as {
+    shadowColor: string;
+    shadowOffset: { width: number; height: number };
+    shadowOpacity: number;
+    shadowRadius: number;
+    elevation: number;
+  };
+
   return (
     <View style={styles.wrapper}>
       {label && <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{label}</Text>}
@@ -27,7 +36,8 @@ export const Input: React.FC<InputProps> = ({ label, error, icon, isPassword, mu
             borderColor: error ? theme.colors.danger : focused ? theme.colors.primary : theme.colors.border,
             borderRadius: theme.radius.md,
           },
-          focused && !error && theme.shadow('sm'),
+          shadowStyle,
+          { shadowOpacity: activeShadow ? shadowStyle.shadowOpacity : 0, elevation: activeShadow ? shadowStyle.elevation : 0 },
         ]}
       >
         {icon && <Ionicons name={icon} size={19} color={focused ? theme.colors.primary : theme.colors.textMuted} style={{ marginRight: 10, marginTop: multiline ? 2 : 0 }} />}

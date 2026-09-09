@@ -29,7 +29,9 @@ export const Chip: React.FC<ChipProps> = ({ label, selected = false, onPress, ic
       {icon && (
         <Ionicons name={icon} size={14} color={selected ? theme.colors.textInverse : theme.colors.textSecondary} style={{ marginRight: 6 }} />
       )}
-      <Text style={[styles.label, { color: selected ? theme.colors.textInverse : theme.colors.textSecondary }]}>{label}</Text>
+      <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.label, { color: selected ? theme.colors.textInverse : theme.colors.textSecondary }]}>
+        {label}
+      </Text>
     </Pressable>
   );
 };
@@ -37,12 +39,14 @@ export const Chip: React.FC<ChipProps> = ({ label, selected = false, onPress, ic
 const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
+    flexShrink: 0,
     alignItems: 'center',
-    paddingVertical: 9,
+    justifyContent: 'center',
+    height: 38,
     paddingHorizontal: 16,
     borderRadius: 999,
     borderWidth: 1.5,
     marginRight: 10,
   },
-  label: { fontSize: 13, fontWeight: '700' },
+  label: { fontSize: 13, lineHeight: 18, fontWeight: '700' },
 });
