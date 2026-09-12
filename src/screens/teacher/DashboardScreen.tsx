@@ -1,14 +1,17 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { TeacherDrawerScreenProps } from '../../navigation/types';
 import { useTheme } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
 import { useTeacherData } from '../../context/TeacherDataContext';
+import { useCatalog } from '../../context/CatalogContext';
 import { ScreenContainer } from '../../components/layout';
-import { Avatar, Button, IconButton, SectionHeader } from '../../components/ui';
+import { Avatar, AnimatedBar, AnimatedNumber, Button, IconButton, SectionHeader } from '../../components/ui';
 import { CourseListItem } from '../../components/course';
+import { TeachingSubjectsSheet } from '../../components/teacher/TeachingSubjectsSheet';
 import { Teacher } from '../../types';
 import { formatPrice, formatCompactNumber, abbreviateMonth } from '../../utils/formatters';
 
@@ -16,9 +19,17 @@ type Props = TeacherDrawerScreenProps<'Dashboard'>;
 
 export const DashboardScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const teacher = user as Teacher;
   const { myCourses, payments, monthlyRevenue } = useTeacherData();
+  const { categories } = useCatalog();
+  const [subjectsSheetOpen, setSubjectsSheetOpen] = React.useState(false);
+  const teachingCategories = categories.filter((c) => teacher?.teachingCategoryIds?.includes(c.id));
+
+  const handleSaveSubjects = (ids: string[]) => {
+    updateProfile({ teachingCategoryIds: ids } as Partial<Teacher>);
+    setSubjectsSheetOpen(false);
+  };
 
   const totalRevenue = payments.filter((p) => p.status === 'Réussi').reduce((sum, p) => sum + p.amount, 0);
   const totalStudents = myCourses.reduce((sum, c) => sum + c.studentsCount, 0);
@@ -33,86 +44,143 @@ export const DashboardScreen: React.FC<Props> = ({ navigation }) => {
   ];
 
   return (
+    <View style={{ flex: 1 }}>
     <ScreenContainer scroll edges={['top']}>
-      <View style={styles.header}>
+      <Animated.View entering={FadeInDown.delay(20).springify()} style={styles.header}>
         <IconButton icon="menu-outline" onPress={() => navigation.openDrawer()} variant="ghost" style={{ marginLeft: -8 }} />
         <View style={{ flex: 1, marginLeft: 4 }}>
           <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>Bon retour,</Text>
           <Text style={[styles.name, { color: theme.colors.text }]}>{teacher?.fullName}</Text>
         </View>
         <Avatar uri={teacher?.avatar} size={44} />
-      </View>
+      </Animated.View>
 
-      <LinearGradient colors={theme.colors.gradientPrimary} style={styles.revenueBanner}>
-        <Text style={styles.revenueLabel}>Revenus ce mois-ci</Text>
-        <Text style={styles.revenueValue}>{formatPrice(monthlyRevenue[monthlyRevenue.length - 1].amount)}</Text>
-        <View style={styles.revenueTrendRow}>
-          <Ionicons name="trending-up" size={14} color="#fff" />
-          <Text style={styles.revenueTrend}>+12,5% par rapport au mois dernier</Text>
-        </View>
-      </LinearGradient>
+      {teachingCategories.length > 0 ? (
+        <Animated.View entering={FadeInDown.delay(60).springify()}>
+          <Pressable
+            onPress={() => setSubjectsSheetOpen(true)}
+            style={[styles.subjectsPill, { backgroundColor: theme.colors.primarySoft }]}
+          >
+            <Ionicons name="school-outline" size={15} color={theme.colors.primary} />
+            <Text style={[styles.subjectsPillLabel, { color: theme.colors.primary }]} numberOfLines={1}>
+              {teachingCategories.map((c) => c.name).join(' · ')}
+            </Text>
+            <Text style={[styles.subjectsPillChange, { color: theme.colors.primary }]}>Modifier</Text>
+          </Pressable>
+        </Animated.View>
+      ) : (
+        <Animated.View entering={FadeInDown.delay(60).springify()}>
+          <Pressable
+            onPress={() => setSubjectsSheetOpen(true)}
+            style={[styles.subjectsCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}
+          >
+            <View style={[styles.subjectsCardIcon, { backgroundColor: theme.colors.primarySoft }]}>
+              <Ionicons name="school-outline" size={20} color={theme.colors.primary} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={[styles.subjectsCardTitle, { color: theme.colors.text }]}>Quelles matières enseignez-vous ?</Text>
+              <Text style={[styles.subjectsCardSubtitle, { color: theme.colors.textMuted }]}>On personnalisera les catégories proposées pour vos cours</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+          </Pressable>
+        </Animated.View>
+      )}
+
+      <Animated.View entering={FadeInDown.delay(80).springify()}>
+        <LinearGradient colors={theme.colors.gradientPrimary} style={styles.revenueBanner}>
+          <Text style={styles.revenueLabel}>Revenus ce mois-ci</Text>
+          <AnimatedNumber
+            value={monthlyRevenue[monthlyRevenue.length - 1].amount}
+            formatter={formatPrice}
+            style={styles.revenueValue}
+          />
+          <View style={styles.revenueTrendRow}>
+            <Ionicons name="trending-up" size={14} color="#fff" />
+            <Text style={styles.revenueTrend}>+12,5% par rapport au mois dernier</Text>
+          </View>
+        </LinearGradient>
+      </Animated.View>
 
       <View style={styles.statsGrid}>
-        {stats.map((s) => (
-          <View key={s.label} style={[styles.statCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+        {stats.map((s, i) => (
+          <Animated.View
+            key={s.label}
+            entering={FadeInDown.delay(140 + i * 60).springify()}
+            style={[styles.statCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}
+          >
             <View style={[styles.statIcon, { backgroundColor: `${s.tone}1A` }]}>
               <Ionicons name={s.icon} size={18} color={s.tone} />
             </View>
             <Text style={[styles.statValue, { color: theme.colors.text }]}>{s.value}</Text>
             <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>{s.label}</Text>
-          </View>
+          </Animated.View>
         ))}
       </View>
 
-      <SectionHeader title="Évolution des revenus" subtitle="6 derniers mois" onAction={() => navigation.navigate('Revenue')} />
-      <View style={[styles.chartCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
-        <View style={styles.chartRow}>
-          {monthlyRevenue.map((m) => (
-            <View key={m.month} style={styles.chartBarWrap}>
-              <View style={styles.chartBarTrack}>
-                <View
-                  style={[
-                    styles.chartBar,
-                    { height: `${(m.amount / maxRevenue) * 100}%`, backgroundColor: theme.colors.primary },
-                  ]}
-                />
+      <Animated.View entering={FadeInDown.delay(360).springify()}>
+        <SectionHeader title="Évolution des revenus" subtitle="6 derniers mois" onAction={() => navigation.navigate('Revenue')} />
+        <View style={[styles.chartCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+          <View style={styles.chartRow}>
+            {monthlyRevenue.map((m, i) => (
+              <View key={m.month} style={styles.chartBarWrap}>
+                <View style={styles.chartBarTrack}>
+                  <AnimatedBar heightPercent={(m.amount / maxRevenue) * 100} color={theme.colors.primary} delay={400 + i * 60} />
+                </View>
+                <Text style={[styles.chartLabel, { color: theme.colors.textMuted }]}>{abbreviateMonth(m.month)}</Text>
               </View>
-              <Text style={[styles.chartLabel, { color: theme.colors.textMuted }]}>{abbreviateMonth(m.month)}</Text>
-            </View>
-          ))}
+            ))}
+          </View>
         </View>
-      </View>
+      </Animated.View>
 
-      <SectionHeader title="Mes cours" subtitle={`${myCourses.length} cours publiés`} onAction={() => navigation.navigate('TeacherMyCourses')} />
-      <ScrollView showsVerticalScrollIndicator={false} style={{ marginBottom: 8 }}>
-        {myCourses.slice(0, 2).map((c) => (
-          <CourseListItem key={c.id} course={c} onPress={() => (navigation.navigate as any)('TeacherCourseDetail', { courseId: c.id })} />
-        ))}
-      </ScrollView>
+      <Animated.View entering={FadeInDown.delay(420).springify()}>
+        <SectionHeader title="Mes cours" subtitle={`${myCourses.length} cours publiés`} onAction={() => navigation.navigate('TeacherMyCourses')} />
+        <ScrollView showsVerticalScrollIndicator={false} style={{ marginBottom: 8 }}>
+          {myCourses.slice(0, 2).map((c) => (
+            <CourseListItem key={c.id} course={c} onPress={() => (navigation.navigate as any)('TeacherCourseDetail', { courseId: c.id })} />
+          ))}
+        </ScrollView>
 
-      <Button label="Ajouter un nouveau cours" icon="add-circle-outline" onPress={() => navigation.navigate('AddCourse')} style={{ marginTop: 8 }} />
+        <Button label="Ajouter un nouveau cours" icon="add-circle-outline" onPress={() => navigation.navigate('AddCourse')} style={{ marginTop: 8 }} />
+      </Animated.View>
     </ScreenContainer>
+
+    <TeachingSubjectsSheet
+      key={(teacher?.teachingCategoryIds ?? []).join(',')}
+      visible={subjectsSheetOpen}
+      categories={categories}
+      currentIds={teacher?.teachingCategoryIds ?? []}
+      onSave={handleSaveSubjects}
+      onClose={() => setSubjectsSheetOpen(false)}
+    />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 20 },
   greeting: { fontSize: 12.5, fontWeight: '600' },
-  name: { fontSize: 18, fontWeight: '800', marginTop: 2 },
+  name: { fontSize: 18, fontWeight: '700', marginTop: 2 },
+  subjectsPill: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14, marginBottom: 16, maxWidth: '100%' },
+  subjectsPillLabel: { fontSize: 12, fontWeight: '700', marginLeft: 6, flexShrink: 1 },
+  subjectsPillChange: { fontSize: 11, fontWeight: '700', marginLeft: 8, textDecorationLine: 'underline' },
+  subjectsCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, marginBottom: 16 },
+  subjectsCardIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  subjectsCardTitle: { fontSize: 13.5, fontWeight: '700' },
+  subjectsCardSubtitle: { fontSize: 11, marginTop: 3, lineHeight: 15 },
   revenueBanner: { borderRadius: 20, padding: 20, marginBottom: 20 },
   revenueLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 12.5, fontWeight: '600' },
-  revenueValue: { color: '#fff', fontSize: 30, fontWeight: '800', marginTop: 6 },
+  revenueValue: { color: '#fff', fontSize: 30, fontWeight: '700', marginTop: 6 },
   revenueTrendRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
   revenueTrend: { color: '#fff', fontSize: 11.5, marginLeft: 6, fontWeight: '600' },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 24 },
   statCard: { width: '48%', borderRadius: 16, padding: 14, marginBottom: 12 },
   statIcon: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  statValue: { fontSize: 18, fontWeight: '800' },
+  statValue: { fontSize: 18, fontWeight: '700' },
   statLabel: { fontSize: 11, marginTop: 3, fontWeight: '600' },
   chartCard: { borderRadius: 18, padding: 18, marginBottom: 24 },
   chartRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 120 },
   chartBarWrap: { alignItems: 'center', flex: 1 },
   chartBarTrack: { height: 90, width: 18, justifyContent: 'flex-end' },
-  chartBar: { width: '100%', borderRadius: 6, minHeight: 6 },
   chartLabel: { fontSize: 10, marginTop: 8, fontWeight: '700' },
 });

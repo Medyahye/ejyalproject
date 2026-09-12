@@ -10,3 +10,7 @@ export * from './EmptyState';
 export * from './SectionHeader';
 export * from './IconButton';
 export * from './Chip';
+export * from './AnimatedBar';
+export * from './SegmentedControl';
+export * from './AnimatedNumber';
+export * from './PinInput';

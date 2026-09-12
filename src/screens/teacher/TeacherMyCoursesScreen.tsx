@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, Image, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown, FadeOutLeft, LinearTransition } from 'react-native-reanimated';
 import { TeacherDrawerScreenProps } from '../../navigation/types';
 import { useTheme } from '../../theme';
 import { useTeacherData } from '../../context/TeacherDataContext';
@@ -24,18 +25,23 @@ export const TeacherMyCoursesScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <ScreenContainer edges={['top']}>
-      <View style={styles.header}>
+      <Animated.View entering={FadeInDown.delay(20).springify()} style={styles.header}>
         <IconButton icon="menu-outline" onPress={() => navigation.openDrawer()} variant="ghost" style={{ marginLeft: -8 }} />
         <Text style={[styles.title, { color: theme.colors.text }]}>Mes cours ({myCourses.length})</Text>
         <IconButton icon="add" onPress={() => navigation.navigate('AddCourse')} />
-      </View>
+      </Animated.View>
 
       <FlatList
         data={myCourses}
         keyExtractor={(c) => c.id}
         contentContainerStyle={{ paddingBottom: 20 }}
-        renderItem={({ item }) => (
-          <View style={[styles.card, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+        renderItem={({ item, index }) => (
+          <Animated.View
+            entering={FadeInDown.delay(Math.min(index, 8) * 70).springify()}
+            exiting={FadeOutLeft.duration(200)}
+            layout={LinearTransition.springify()}
+            style={[styles.card, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}
+          >
             <Pressable onPress={() => (navigation.navigate as any)('TeacherCourseDetail', { courseId: item.id })}>
               <Image source={{ uri: item.thumbnail }} style={styles.image} />
             </Pressable>
@@ -70,7 +76,7 @@ export const TeacherMyCoursesScreen: React.FC<Props> = ({ navigation }) => {
                 </Pressable>
               </View>
             </View>
-          </View>
+          </Animated.View>
         )}
         ListEmptyComponent={
           <EmptyState
@@ -88,7 +94,7 @@ export const TeacherMyCoursesScreen: React.FC<Props> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 8, marginBottom: 20 },
-  title: { fontSize: 17, fontWeight: '800', flex: 1, marginLeft: 4 },
+  title: { fontSize: 17, fontWeight: '700', flex: 1, marginLeft: 4 },
   card: { flexDirection: 'row', borderRadius: 16, marginBottom: 14, overflow: 'hidden' },
   image: { width: 100, height: '100%', minHeight: 150 },
   body: { flex: 1, padding: 12 },

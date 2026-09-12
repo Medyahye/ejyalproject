@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown, FadeInUp, FadeOutLeft, LinearTransition } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
@@ -37,17 +38,22 @@ export const CartScreen: React.FC = () => {
 
   return (
     <ScreenContainer edges={['top']}>
-      <View style={styles.header}>
+      <Animated.View entering={FadeInDown.delay(20).springify()} style={styles.header}>
         <IconButton icon="arrow-back" onPress={() => navigation.goBack()} variant="ghost" style={{ marginLeft: -8 }} />
         <Text style={[styles.title, { color: theme.colors.text }]}>Mon panier ({cartItems.length})</Text>
-      </View>
+      </Animated.View>
 
       <FlatList
         data={cartItems}
         keyExtractor={(i) => i.course.id}
         contentContainerStyle={{ paddingBottom: 16 }}
-        renderItem={({ item }) => (
-          <View style={[styles.itemCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+        renderItem={({ item, index }) => (
+          <Animated.View
+            entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}
+            exiting={FadeOutLeft.duration(200)}
+            layout={LinearTransition.springify()}
+            style={[styles.itemCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}
+          >
             <Image source={{ uri: item.course.thumbnail }} style={styles.thumb} />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text numberOfLines={2} style={[styles.itemTitle, { color: theme.colors.text }]}>{item.course.title}</Text>
@@ -57,11 +63,11 @@ export const CartScreen: React.FC = () => {
             <Pressable onPress={() => removeFromCart(item.course.id)} hitSlop={8}>
               <Ionicons name="trash-outline" size={20} color={theme.colors.danger} />
             </Pressable>
-          </View>
+          </Animated.View>
         )}
       />
 
-      <View style={[styles.summary, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+      <Animated.View entering={FadeInUp.delay(120).springify()} style={[styles.summary, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
         <View style={styles.summaryRow}>
           <Text style={{ color: theme.colors.textSecondary }}>Sous-total</Text>
           <Text style={{ color: theme.colors.text, fontWeight: '700' }}>{formatPrice(cartTotal)}</Text>
@@ -71,23 +77,23 @@ export const CartScreen: React.FC = () => {
           <Text style={{ color: theme.colors.secondary, fontWeight: '700' }}>Gratuit</Text>
         </View>
         <View style={[styles.summaryRow, { marginTop: 6, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.colors.border }]}>
-          <Text style={{ color: theme.colors.text, fontWeight: '800', fontSize: 16 }}>Total</Text>
-          <Text style={{ color: theme.colors.text, fontWeight: '800', fontSize: 18 }}>{formatPrice(cartTotal)}</Text>
+          <Text style={{ color: theme.colors.text, fontWeight: '700', fontSize: 16 }}>Total</Text>
+          <Text style={{ color: theme.colors.text, fontWeight: '700', fontSize: 18 }}>{formatPrice(cartTotal)}</Text>
         </View>
         <Button label="Passer au paiement" icon="arrow-forward" iconPosition="right" onPress={() => navigation.navigate('Payment')} style={{ marginTop: 16 }} />
-      </View>
+      </Animated.View>
     </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 20 },
-  title: { fontSize: 19, fontWeight: '800', marginLeft: 4 },
+  title: { fontSize: 19, fontWeight: '700', marginLeft: 4 },
   itemCard: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 16, marginBottom: 12 },
   thumb: { width: 64, height: 64, borderRadius: 12 },
   itemTitle: { fontSize: 13, fontWeight: '700', lineHeight: 17 },
   itemTeacher: { fontSize: 11.5, marginTop: 3 },
-  itemPrice: { fontSize: 14, fontWeight: '800', marginTop: 5 },
+  itemPrice: { fontSize: 14, fontWeight: '700', marginTop: 5 },
   summary: { borderTopWidth: 1, paddingTop: 16, paddingHorizontal: 4, paddingBottom: 4 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
 });

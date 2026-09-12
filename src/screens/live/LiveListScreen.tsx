@@ -93,19 +93,19 @@ export const LiveListScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  title: { fontSize: 21, fontWeight: '800', marginTop: 8, marginBottom: 4 },
+  title: { fontSize: 21, fontWeight: '700', marginTop: 8, marginBottom: 4 },
   subtitle: { fontSize: 13, marginBottom: 20 },
-  sectionTitle: { fontSize: 15.5, fontWeight: '800', marginBottom: 12 },
+  sectionTitle: { fontSize: 15.5, fontWeight: '700', marginBottom: 12 },
   liveCardWrap: { width: 240, height: 150, borderRadius: 18, overflow: 'hidden', marginRight: 14 },
   liveImage: { width: '100%', height: '100%', position: 'absolute' },
   liveGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '60%' },
   liveBadge: { position: 'absolute', top: 10, left: 10, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FF6B6B', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
   liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#fff', marginRight: 4 },
-  liveBadgeText: { color: '#fff', fontSize: 9.5, fontWeight: '800' },
+  liveBadgeText: { color: '#fff', fontSize: 9.5, fontWeight: '700' },
   liveViewers: { position: 'absolute', top: 10, right: 10, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
   liveViewersText: { color: '#fff', fontSize: 10, fontWeight: '700', marginLeft: 4 },
   liveInfo: { position: 'absolute', bottom: 10, left: 10, right: 10 },
-  liveTitle: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  liveTitle: { color: '#fff', fontSize: 13, fontWeight: '700' },
   liveTeacher: { color: 'rgba(255,255,255,0.85)', fontSize: 11, marginTop: 2 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 16, marginBottom: 12 },
   rowImage: { width: 64, height: 64, borderRadius: 12 },

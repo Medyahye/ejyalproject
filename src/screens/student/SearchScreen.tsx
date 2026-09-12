@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 20 },
   searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', borderRadius: 14, paddingHorizontal: 14, height: 46 },
   input: { flex: 1, marginLeft: 8, fontSize: 14, height: '100%' },
-  sectionTitle: { fontSize: 15, fontWeight: '800', marginBottom: 12 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', marginBottom: 12 },
   recentWrap: { flexDirection: 'row', flexWrap: 'wrap' },
   resultCount: { fontSize: 12.5, fontWeight: '600', marginBottom: 14 },
 });

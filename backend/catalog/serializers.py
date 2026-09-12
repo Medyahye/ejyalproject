@@ -65,6 +65,7 @@ class CourseSerializer(serializers.ModelSerializer):
     whatYouWillLearn = serializers.ListField(source='what_you_will_learn', child=serializers.CharField(), required=False)
     isFeatured = serializers.BooleanField(source='is_featured', required=False)
     isBestseller = serializers.BooleanField(source='is_bestseller', required=False)
+    gradeTracks = serializers.ListField(source='grade_tracks', child=serializers.CharField(), required=False)
     lessons = LessonSerializer(many=True, read_only=True)
     pdfs = CoursePdfSerializer(many=True, read_only=True)
 
@@ -74,7 +75,7 @@ class CourseSerializer(serializers.ModelSerializer):
             'id', 'title', 'subtitle', 'description', 'thumbnail', 'coverGradient',
             'teacherId', 'teacherName', 'teacherAvatar', 'categoryId', 'categoryName',
             'price', 'originalPrice', 'rating', 'ratingCount', 'studentsCount',
-            'level', 'language', 'durationHours', 'lastUpdated', 'lessons', 'pdfs',
+            'level', 'gradeTracks', 'language', 'durationHours', 'lastUpdated', 'lessons', 'pdfs',
             'whatYouWillLearn', 'requirements', 'isFeatured', 'isBestseller',
         ]
         read_only_fields = ['id', 'rating']

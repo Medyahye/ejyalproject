@@ -66,8 +66,8 @@ export const SettingsScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 12 },
-  title: { fontSize: 19, fontWeight: '800', marginLeft: 4 },
-  sectionLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginTop: 18, marginBottom: 10 },
+  title: { fontSize: 19, fontWeight: '700', marginLeft: 4 },
+  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginTop: 18, marginBottom: 10 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, marginBottom: 10 },
   rowLabel: { flex: 1, marginLeft: 14, fontSize: 13.5, fontWeight: '700' },
   version: { textAlign: 'center', fontSize: 11.5, marginTop: 20, marginBottom: 10 },

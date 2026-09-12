@@ -108,6 +108,6 @@ export const ScheduleLiveScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 20 },
-  title: { fontSize: 19, fontWeight: '800', marginLeft: 4 },
+  title: { fontSize: 19, fontWeight: '700', marginLeft: 4 },
   sectionLabel: { fontSize: 13, fontWeight: '700', marginBottom: 10 },
 });

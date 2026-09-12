@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
+import { haptics } from '../../utils/haptics';
 
 interface IconButtonProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -19,7 +20,10 @@ export const IconButton: React.FC<IconButtonProps> = ({ icon, onPress, size = 40
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptics.tap();
+        onPress?.();
+      }}
       style={({ pressed }) => [
         styles.base,
         {

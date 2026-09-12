@@ -15,8 +15,8 @@ const fontFamilyMedium = Platform.select({
 export const typography = {
   fontFamily,
   fontFamilyMedium,
-  display: { fontSize: 32, lineHeight: 40, fontWeight: '800' as const },
-  h1: { fontSize: 26, lineHeight: 34, fontWeight: '800' as const },
+  display: { fontSize: 32, lineHeight: 40, fontWeight: '700' as const },
+  h1: { fontSize: 26, lineHeight: 34, fontWeight: '700' as const },
   h2: { fontSize: 22, lineHeight: 30, fontWeight: '700' as const },
   h3: { fontSize: 18, lineHeight: 26, fontWeight: '700' as const },
   bodyLg: { fontSize: 16, lineHeight: 24, fontWeight: '400' as const },

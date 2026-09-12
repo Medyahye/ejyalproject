@@ -27,7 +27,7 @@ const STORAGE_KEY = '@educonnect/theme-preference';
 
 function buildTheme(isDark: boolean): Theme {
   const colors = isDark ? darkColors : lightColors;
-  // Light mode uses a soft violet-tinted shadow (instead of flat black) for a more
+  // Light mode uses a soft brand-tinted shadow (instead of flat black) for a more
   // premium, "floating" card feel. Dark mode keeps a neutral shadow since elevation
   // there is mostly conveyed via borders (colored shadows read as muddy on dark backgrounds).
   const shadowColor = isDark ? colors.shadow : colors.primaryDark;

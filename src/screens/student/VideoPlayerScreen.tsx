@@ -50,7 +50,24 @@ export const VideoPlayerScreen: React.FC = () => {
     }
   }, [progress, course, setCourseProgress]);
 
-  if (!course || !lesson) return null;
+  if (!course) return null;
+
+  if (!lesson) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#0E0E13', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+        <Pressable onPress={() => navigation.goBack()} style={{ position: 'absolute', top: 50, left: 16 }} hitSlop={10}>
+          <Ionicons name="chevron-down" size={26} color="#fff" />
+        </Pressable>
+        <Ionicons name="videocam-off-outline" size={40} color="rgba(255,255,255,0.5)" />
+        <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700', marginTop: 14, textAlign: 'center' }}>
+          Ce cours n'a pas encore de leçon
+        </Text>
+        <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12.5, marginTop: 6, textAlign: 'center' }}>
+          Le formateur n'a pas encore publié de vidéo pour ce cours.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0E0E13' }}>
@@ -58,14 +75,14 @@ export const VideoPlayerScreen: React.FC = () => {
         <Image source={{ uri: lesson.thumbnail }} style={StyleSheet.absoluteFill} blurRadius={2} />
         <LinearGradient colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.25)', 'rgba(0,0,0,0.7)']} style={StyleSheet.absoluteFill} />
 
-        <Pressable onPress={() => navigation.goBack()} style={styles.closeBtn} hitSlop={10}>
-          <Ionicons name="chevron-down" size={26} color="#fff" />
-        </Pressable>
-
         <Pressable onPress={() => setIsPlaying((p) => !p)} style={styles.centerPlay}>
           <View style={styles.playCircle}>
             <Ionicons name={isPlaying ? 'pause' : 'play'} size={30} color="#fff" />
           </View>
+        </Pressable>
+
+        <Pressable onPress={() => navigation.goBack()} style={styles.closeBtn} hitSlop={10}>
+          <Ionicons name="chevron-down" size={26} color="#fff" />
         </Pressable>
 
         <View style={styles.bottomControls}>
@@ -126,9 +143,9 @@ const styles = StyleSheet.create({
   lessonTitle: { color: '#fff', fontSize: 15, fontWeight: '700', marginBottom: 12 },
   controlsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
   timeText: { color: 'rgba(255,255,255,0.85)', fontSize: 11.5, fontWeight: '600' },
-  speedText: { color: '#fff', fontSize: 12.5, fontWeight: '800' },
+  speedText: { color: '#fff', fontSize: 12.5, fontWeight: '700' },
   playlist: { flex: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
-  playlistTitle: { fontSize: 15, fontWeight: '800', marginBottom: 14 },
+  playlistTitle: { fontSize: 15, fontWeight: '700', marginBottom: 14 },
   lessonRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 10, borderRadius: 12, marginBottom: 4 },
   lessonRowText: { flex: 1, fontSize: 13.5, fontWeight: '600', marginLeft: 12 },
   lessonRowDuration: { fontSize: 11.5, fontWeight: '600' },

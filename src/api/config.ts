@@ -7,4 +7,4 @@
  * update it here — find it with `ipconfig` (Windows) and look for the IPv4
  * address of your Wi-Fi adapter.
  */
-export const API_BASE_URL = 'http://192.168.1.20:8000/api';
+export const API_BASE_URL = 'http://192.168.100.17:8001/api';

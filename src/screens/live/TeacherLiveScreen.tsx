@@ -66,7 +66,7 @@ export const TeacherLiveScreen: React.FC<Props> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 20 },
-  title: { fontSize: 19, fontWeight: '800', marginLeft: 4 },
+  title: { fontSize: 19, fontWeight: '700', marginLeft: 4 },
   card: { flexDirection: 'row', padding: 10, borderRadius: 16, marginBottom: 12, alignItems: 'center' },
   image: { width: 72, height: 72, borderRadius: 12 },
   rowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },

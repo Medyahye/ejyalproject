@@ -1,6 +1,7 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
+from catalog.models import Category
 from .models import User
 
 
@@ -22,12 +23,15 @@ class UserSerializer(serializers.ModelSerializer):
     totalRevenue = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
 
+    gradeTrack = serializers.CharField(source='grade_track', required=False, allow_blank=True)
+    teachingCategoryIds = serializers.PrimaryKeyRelatedField(source='teaching_categories', many=True, read_only=True)
+
     class Meta:
         model = User
         fields = [
             'id', 'fullName', 'email', 'avatar', 'role', 'bio', 'createdAt',
-            'enrolledCourseIds', 'favoriteCourseIds', 'purchasedCourseIds',
-            'headline', 'courseIds', 'totalStudents', 'totalRevenue', 'rating', 'specialties',
+            'enrolledCourseIds', 'favoriteCourseIds', 'purchasedCourseIds', 'gradeTrack',
+            'headline', 'courseIds', 'totalStudents', 'totalRevenue', 'rating', 'specialties', 'teachingCategoryIds',
         ]
 
     def get_enrolledCourseIds(self, obj):
@@ -74,10 +78,10 @@ class UserSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         if instance.is_student:
-            for field in ('headline', 'courseIds', 'totalStudents', 'totalRevenue', 'rating', 'specialties'):
+            for field in ('headline', 'courseIds', 'totalStudents', 'totalRevenue', 'rating', 'specialties', 'teachingCategoryIds'):
                 data.pop(field, None)
         else:
-            for field in ('enrolledCourseIds', 'favoriteCourseIds', 'purchasedCourseIds'):
+            for field in ('enrolledCourseIds', 'favoriteCourseIds', 'purchasedCourseIds', 'gradeTrack'):
                 data.pop(field, None)
         return data
 
@@ -96,7 +100,11 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class UpdateProfileSerializer(serializers.ModelSerializer):
     fullName = serializers.CharField(source='full_name', required=False)
+    gradeTrack = serializers.CharField(source='grade_track', required=False, allow_blank=True)
+    teachingCategoryIds = serializers.PrimaryKeyRelatedField(
+        source='teaching_categories', many=True, queryset=Category.objects.all(), required=False,
+    )
 
     class Meta:
         model = User
-        fields = ['fullName', 'avatar', 'bio', 'headline', 'specialties']
+        fields = ['fullName', 'avatar', 'bio', 'gradeTrack', 'headline', 'specialties', 'teachingCategoryIds']

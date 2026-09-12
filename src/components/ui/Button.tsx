@@ -3,6 +3,7 @@ import { Pressable, Text, StyleSheet, ActivityIndicator, ViewStyle, StyleProp, V
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
+import { haptics } from '../../utils/haptics';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
@@ -34,6 +35,11 @@ export const Button: React.FC<ButtonProps> = ({
 }) => {
   const { theme } = useTheme();
   const isDisabled = disabled || loading;
+  const handlePress = () => {
+    if (isDisabled) return;
+    haptics.tap();
+    onPress?.();
+  };
   const paddingV = size === 'sm' ? 10 : size === 'lg' ? 18 : 14;
   const fontSize = size === 'sm' ? 13 : size === 'lg' ? 17 : 15;
 
@@ -85,7 +91,7 @@ export const Button: React.FC<ButtonProps> = ({
   if (variant === 'primary') {
     return (
       <Pressable
-        onPress={onPress}
+        onPress={handlePress}
         disabled={isDisabled}
         style={({ pressed }) => [
           !isDisabled && theme.shadow('md'),
@@ -107,7 +113,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       disabled={isDisabled}
       style={({ pressed }) => [baseStyle, { opacity: isDisabled ? 0.55 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
     >

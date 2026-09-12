@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { TeacherDrawerScreenProps } from '../../navigation/types';
 import { useTheme } from '../../theme';
 import { useTeacherData } from '../../context/TeacherDataContext';
@@ -26,79 +27,85 @@ export const StatisticsScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <ScreenContainer scroll edges={['top']}>
-      <View style={styles.header}>
+      <Animated.View entering={FadeInDown.delay(20).springify()} style={styles.header}>
         <IconButton icon="menu-outline" onPress={() => navigation.openDrawer()} variant="ghost" style={{ marginLeft: -8 }} />
         <Text style={[styles.title, { color: theme.colors.text }]}>Statistiques</Text>
-      </View>
+      </Animated.View>
 
       <View style={styles.statsRow}>
-        <View style={[styles.statCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+        <Animated.View entering={FadeInDown.delay(80).springify()} style={[styles.statCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
           <Ionicons name="people" size={20} color={theme.colors.primary} />
           <Text style={[styles.statValue, { color: theme.colors.text }]}>{formatCompactNumber(totalStudents)}</Text>
           <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Étudiants</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+        </Animated.View>
+        <Animated.View entering={FadeInDown.delay(130).springify()} style={[styles.statCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
           <Ionicons name="chatbubbles" size={20} color={theme.colors.info} />
           <Text style={[styles.statValue, { color: theme.colors.text }]}>{formatCompactNumber(totalReviews)}</Text>
           <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Avis reçus</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+        </Animated.View>
+        <Animated.View entering={FadeInDown.delay(180).springify()} style={[styles.statCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
           <Ionicons name="star" size={20} color={theme.colors.warning} />
           <Text style={[styles.statValue, { color: theme.colors.text }]}>{avgRating.toFixed(1)}</Text>
           <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Note moyenne</Text>
+        </Animated.View>
+      </View>
+
+      <Animated.View entering={FadeInDown.delay(240).springify()}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Répartition des notes</Text>
+        <View style={[styles.card, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+          {ratingBreakdown.map((r) => (
+            <View key={r.star} style={styles.ratingRow}>
+              <Text style={[styles.ratingStar, { color: theme.colors.textSecondary }]}>{r.star} ★</Text>
+              <View style={{ flex: 1, marginHorizontal: 10 }}>
+                <ProgressBar progress={r.percent / 100} color={theme.colors.accent} height={7} />
+              </View>
+              <Text style={[styles.ratingPercent, { color: theme.colors.textMuted }]}>{r.percent}%</Text>
+            </View>
+          ))}
         </View>
-      </View>
+      </Animated.View>
 
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Répartition des notes</Text>
-      <View style={[styles.card, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
-        {ratingBreakdown.map((r) => (
-          <View key={r.star} style={styles.ratingRow}>
-            <Text style={[styles.ratingStar, { color: theme.colors.textSecondary }]}>{r.star} ★</Text>
-            <View style={{ flex: 1, marginHorizontal: 10 }}>
-              <ProgressBar progress={r.percent / 100} color={theme.colors.accent} height={7} />
+      <Animated.View entering={FadeInDown.delay(300).springify()}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Inscriptions par cours</Text>
+        <View style={[styles.card, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+          {myCourses.map((c) => (
+            <View key={c.id} style={{ marginBottom: 16 }}>
+              <View style={styles.courseStatRow}>
+                <Text numberOfLines={1} style={[styles.courseStatTitle, { color: theme.colors.text }]}>{c.title}</Text>
+                <Text style={[styles.courseStatValue, { color: theme.colors.textMuted }]}>{c.studentsCount.toLocaleString('fr-FR')}</Text>
+              </View>
+              <ProgressBar progress={c.studentsCount / maxStudents} color={theme.colors.primary} height={7} />
             </View>
-            <Text style={[styles.ratingPercent, { color: theme.colors.textMuted }]}>{r.percent}%</Text>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      </Animated.View>
 
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Inscriptions par cours</Text>
-      <View style={[styles.card, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
-        {myCourses.map((c) => (
-          <View key={c.id} style={{ marginBottom: 16 }}>
-            <View style={styles.courseStatRow}>
-              <Text numberOfLines={1} style={[styles.courseStatTitle, { color: theme.colors.text }]}>{c.title}</Text>
-              <Text style={[styles.courseStatValue, { color: theme.colors.textMuted }]}>{c.studentsCount.toLocaleString('fr-FR')}</Text>
+      <Animated.View entering={FadeInDown.delay(360).springify()}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Tendance mensuelle</Text>
+        <View style={[styles.card, { backgroundColor: theme.colors.card, ...theme.shadow('sm'), marginBottom: 20 }]}>
+          {monthlyRevenue.map((m) => (
+            <View key={m.month} style={styles.trendRow}>
+              <Text style={[styles.trendMonth, { color: theme.colors.textSecondary }]}>{m.month}</Text>
+              <View style={{ flex: 1, marginHorizontal: 10 }}>
+                <ProgressBar progress={m.amount / Math.max(...monthlyRevenue.map((r) => r.amount), 1)} color={theme.colors.secondary} height={7} />
+              </View>
+              <Text style={[styles.trendValue, { color: theme.colors.text }]}>{formatCompactNumber(m.amount)} UM</Text>
             </View>
-            <ProgressBar progress={c.studentsCount / maxStudents} color={theme.colors.primary} height={7} />
-          </View>
-        ))}
-      </View>
-
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Tendance mensuelle</Text>
-      <View style={[styles.card, { backgroundColor: theme.colors.card, ...theme.shadow('sm'), marginBottom: 20 }]}>
-        {monthlyRevenue.map((m) => (
-          <View key={m.month} style={styles.trendRow}>
-            <Text style={[styles.trendMonth, { color: theme.colors.textSecondary }]}>{m.month}</Text>
-            <View style={{ flex: 1, marginHorizontal: 10 }}>
-              <ProgressBar progress={m.amount / Math.max(...monthlyRevenue.map((r) => r.amount), 1)} color={theme.colors.secondary} height={7} />
-            </View>
-            <Text style={[styles.trendValue, { color: theme.colors.text }]}>{formatCompactNumber(m.amount)} UM</Text>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      </Animated.View>
     </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 20 },
-  title: { fontSize: 19, fontWeight: '800', marginLeft: 4 },
+  title: { fontSize: 19, fontWeight: '700', marginLeft: 4 },
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 24 },
   statCard: { flex: 1, alignItems: 'center', paddingVertical: 16, borderRadius: 16 },
-  statValue: { fontSize: 16, fontWeight: '800', marginTop: 8 },
+  statValue: { fontSize: 16, fontWeight: '700', marginTop: 8 },
   statLabel: { fontSize: 10, marginTop: 2, fontWeight: '600' },
-  sectionTitle: { fontSize: 15, fontWeight: '800', marginBottom: 12 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', marginBottom: 12 },
   card: { borderRadius: 16, padding: 16, marginBottom: 24 },
   ratingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   ratingStar: { fontSize: 12, fontWeight: '700', width: 32 },
@@ -108,5 +115,5 @@ const styles = StyleSheet.create({
   courseStatValue: { fontSize: 12, fontWeight: '700' },
   trendRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
   trendMonth: { fontSize: 12.5, fontWeight: '600', width: 70 },
-  trendValue: { fontSize: 13, fontWeight: '800' },
+  trendValue: { fontSize: 13, fontWeight: '700' },
 });

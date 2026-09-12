@@ -35,6 +35,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         STUDENT = 'student', 'Student'
         TEACHER = 'teacher', 'Teacher'
 
+    class GradeTrack(models.TextChoices):
+        BAC_C = 'bac-c', 'Bac Série C'
+        BAC_D = 'bac-d', 'Bac Série D'
+        BAC_A = 'bac-a', 'Bac Séries A / AB'
+        BAC_O = 'bac-o', 'Bac Série O'
+        BREVET = 'brevet', 'Brevet (BEPC)'
+        CONCOURS = 'concours', 'Concours'
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
     full_name = models.CharField(max_length=150)
@@ -42,9 +50,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(max_length=10, choices=Role.choices)
     bio = models.TextField(blank=True, default='')
 
+    # Student-only field
+    grade_track = models.CharField(max_length=10, choices=GradeTrack.choices, blank=True, default='')
+
     # Teacher-only fields (unused for students)
     headline = models.CharField(max_length=255, blank=True, default='')
     specialties = models.JSONField(default=list, blank=True)
+    teaching_categories = models.ManyToManyField(
+        'catalog.Category', blank=True, related_name='teachers',
+        help_text='Matières enseignées par ce professeur — personnalise les catégories proposées lors de la création de cours.',
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)

@@ -78,7 +78,7 @@ export const PdfLibraryScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 20 },
-  title: { fontSize: 19, fontWeight: '800' },
+  title: { fontSize: 19, fontWeight: '700' },
   subtitle: { fontSize: 12.5, marginTop: 2 },
   card: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, marginBottom: 12 },
   iconBox: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },

@@ -49,4 +49,4 @@ docker compose up -d --build
 
 Voir [`backend/README.md`](backend/README.md) pour la liste des endpoints, les comptes de démo, et le lancement sans Docker.
 
-`src/data/*` et `src/context/*` peuvent être branchés sur cette API en substituant les mutations locales par des appels réseau (fetch/axios) vers `http://localhost:8000/api/...` — les formes de données sont déjà identiques, aucun changement d'écran n'est nécessaire.
+`src/data/*` et `src/context/*` peuvent être branchés sur cette API en substituant les mutations locales par des appels réseau (fetch/axios) vers `http://localhost:8001/api/...` — les formes de données sont déjà identiques, aucun changement d'écran n'est nécessaire.

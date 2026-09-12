@@ -37,6 +37,6 @@ export const GradientHeader: React.FC<GradientHeaderProps> = ({ title, subtitle,
 
 const styles = StyleSheet.create({
   wrap: { borderBottomLeftRadius: 28, borderBottomRightRadius: 28, paddingBottom: 20 },
-  title: { fontSize: 24, fontWeight: '800', color: '#fff' },
+  title: { fontSize: 24, fontWeight: '700', color: '#fff' },
   subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4 },
 });

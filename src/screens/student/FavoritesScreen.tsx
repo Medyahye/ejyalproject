@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
@@ -25,16 +26,18 @@ export const FavoritesScreen: React.FC = () => {
 
   return (
     <ScreenContainer edges={['top']}>
-      <View style={styles.header}>
+      <Animated.View entering={FadeInDown.delay(20).springify()} style={styles.header}>
         <IconButton icon="arrow-back" onPress={() => navigation.goBack()} variant="ghost" style={{ marginLeft: -8 }} />
         <Text style={[styles.title, { color: theme.colors.text }]}>Mes favoris</Text>
-      </View>
+      </Animated.View>
       <FlatList
         data={favCourses}
         keyExtractor={(c) => c.id}
         contentContainerStyle={{ paddingBottom: 20 }}
-        renderItem={({ item }) => (
-          <CourseListItem course={item} onPress={() => navigation.navigate('CourseDetail', { courseId: item.id })} />
+        renderItem={({ item, index }) => (
+          <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 45).springify()}>
+            <CourseListItem course={item} onPress={() => navigation.navigate('CourseDetail', { courseId: item.id })} />
+          </Animated.View>
         )}
         ListEmptyComponent={
           <EmptyState icon="heart-outline" title="Aucun favori" description="Ajoutez des cours à vos favoris pour les retrouver ici." />
@@ -46,5 +49,5 @@ export const FavoritesScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 20 },
-  title: { fontSize: 19, fontWeight: '800', marginLeft: 4 },
+  title: { fontSize: 19, fontWeight: '700', marginLeft: 4 },
 });

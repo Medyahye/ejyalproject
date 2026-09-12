@@ -41,14 +41,13 @@ export const CourseListItem: React.FC<CourseListItemProps> = ({ course, onPress,
         ) : (
           <View style={styles.metaRow}>
             <RatingStars rating={course.rating} size={11} showValue count={course.ratingCount} />
+            <Text style={[styles.metaDot, { color: theme.colors.textMuted }]}>·</Text>
+            <Ionicons name="book-outline" size={12} color={theme.colors.textMuted} />
+            <Text style={[styles.metaText, { color: theme.colors.textMuted }]}>{course.lessons.length} leçons</Text>
+            <Text style={[styles.metaDot, { color: theme.colors.textMuted }]}>·</Text>
+            <Text style={[styles.metaText, { color: theme.colors.textMuted, marginLeft: 0 }]}>{formatDuration(course.durationHours)}</Text>
           </View>
         )}
-        <View style={styles.metaRow}>
-          <Ionicons name="time-outline" size={12} color={theme.colors.textMuted} />
-          <Text style={[styles.metaText, { color: theme.colors.textMuted }]}>{formatDuration(course.durationHours)}</Text>
-          <Ionicons name="book-outline" size={12} color={theme.colors.textMuted} style={{ marginLeft: 10 }} />
-          <Text style={[styles.metaText, { color: theme.colors.textMuted }]}>{course.lessons.length} leçons</Text>
-        </View>
       </View>
       {rightAccessory ?? (
         <Text style={[styles.price, { color: theme.colors.primary }]}>{formatPrice(course.price)}</Text>
@@ -65,6 +64,7 @@ const styles = StyleSheet.create({
   teacher: { fontSize: 12, marginTop: 3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
   metaText: { fontSize: 11, marginLeft: 3 },
+  metaDot: { fontSize: 11, marginHorizontal: 5 },
   progressLabel: { fontSize: 10.5, marginTop: 4, fontWeight: '600' },
-  price: { fontSize: 14, fontWeight: '800', alignSelf: 'flex-start' },
+  price: { fontSize: 14, fontWeight: '700', alignSelf: 'flex-start' },
 });

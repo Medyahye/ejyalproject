@@ -80,9 +80,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   body: { padding: 10 },
-  category: { fontSize: 10.5, fontWeight: '800', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.3 },
+  category: { fontSize: 10.5, fontWeight: '700', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.3 },
   title: { fontSize: 13, fontWeight: '700', lineHeight: 17, marginBottom: 6, minHeight: 34 },
   footerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  price: { fontSize: 14, fontWeight: '800', marginRight: 6 },
+  price: { fontSize: 14, fontWeight: '700', marginRight: 6 },
   oldPrice: { fontSize: 11, textDecorationLine: 'line-through' },
 });

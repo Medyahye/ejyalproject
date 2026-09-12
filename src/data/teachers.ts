@@ -14,6 +14,7 @@ export const teachers: Teacher[] = [
     totalRevenue: 128450,
     rating: 4.8,
     specialties: ['Analyse', 'Algèbre', 'Probabilités'],
+    teachingCategoryIds: ['cat-1'],
     createdAt: '2019-03-12',
   },
   {
@@ -29,6 +30,7 @@ export const teachers: Teacher[] = [
     totalRevenue: 76200,
     rating: 4.9,
     specialties: ['Physique', 'Chimie organique', 'Génétique'],
+    teachingCategoryIds: ['cat-2', 'cat-3'],
     createdAt: '2020-06-01',
   },
   {
@@ -44,6 +46,7 @@ export const teachers: Teacher[] = [
     totalRevenue: 61300,
     rating: 4.7,
     specialties: ['Grammaire arabe', 'Littérature classique', 'Philosophie'],
+    teachingCategoryIds: ['cat-4', 'cat-6'],
     createdAt: '2018-11-20',
   },
   {
@@ -59,6 +62,7 @@ export const teachers: Teacher[] = [
     totalRevenue: 39750,
     rating: 4.6,
     specialties: ['Dissertation', 'Anglais', 'Méthodologie concours'],
+    teachingCategoryIds: ['cat-5', 'cat-7', 'cat-8', 'cat-9'],
     createdAt: '2021-01-15',
   },
 ];

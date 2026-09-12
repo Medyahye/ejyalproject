@@ -58,6 +58,6 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, paddingTop: 50 },
   iconCircle: { width: 72, height: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 22 },
-  title: { fontSize: 24, fontWeight: '800', marginBottom: 10 },
+  title: { fontSize: 24, fontWeight: '700', marginBottom: 10 },
   subtitle: { fontSize: 14, lineHeight: 21, marginBottom: 28 },
 });

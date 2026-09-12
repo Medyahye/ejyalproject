@@ -1,4 +1,4 @@
-import { Category, Course, CourseLevel, Review } from '../types';
+import { Category, Course, CourseLevel, CoursePdf, Lesson, Review } from '../types';
 import { apiRequest } from './client';
 
 export function fetchCourses(): Promise<Course[]> {
@@ -38,4 +38,29 @@ export function updateCourseRequest(courseId: string, updates: Partial<Course>):
 
 export function deleteCourseRequest(courseId: string): Promise<void> {
   return apiRequest<void>(`/courses/${courseId}/`, { method: 'DELETE' });
+}
+
+export interface NewLessonPayload {
+  title: string;
+  durationMinutes: number;
+  isPreview?: boolean;
+  videoUrl?: string;
+  thumbnail?: string;
+  order?: number;
+}
+
+export function createLesson(courseId: string, payload: NewLessonPayload): Promise<Lesson> {
+  return apiRequest<Lesson>(`/courses/${courseId}/lessons/`, { method: 'POST', body: payload });
+}
+
+export interface NewCoursePdfPayload {
+  title: string;
+  sizeMb: number;
+  pages?: number;
+  uri?: string;
+  order?: number;
+}
+
+export function createCoursePdf(courseId: string, payload: NewCoursePdfPayload): Promise<CoursePdf> {
+  return apiRequest<CoursePdf>(`/courses/${courseId}/pdfs/`, { method: 'POST', body: payload });
 }

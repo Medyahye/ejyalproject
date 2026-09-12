@@ -14,7 +14,7 @@ const slides = [
     icon: 'rocket-outline' as const,
     title: 'Apprenez à votre rythme',
     description: 'Des centaines de cours vidéo créés par des experts, accessibles à tout moment, où que vous soyez.',
-    gradient: ['#6C5CE7', '#4432B0'] as const,
+    gradient: ['#5B9CFF', '#3D7FF7'] as const,
   },
   {
     icon: 'ribbon-outline' as const,
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   iconSection: { height: '52%', alignItems: 'center', justifyContent: 'center', borderBottomLeftRadius: 40, borderBottomRightRadius: 40 },
   iconCircle: { width: 130, height: 130, borderRadius: 65, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
   textSection: { paddingHorizontal: 32, paddingTop: 36 },
-  title: { fontSize: 24, fontWeight: '800', textAlign: 'center', marginBottom: 14 },
+  title: { fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 14 },
   desc: { fontSize: 14, textAlign: 'center', lineHeight: 22 },
   bottomSection: { paddingHorizontal: 28, paddingBottom: 28 },
   dotsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 24 },

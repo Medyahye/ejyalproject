@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
+import { haptics } from '../../utils/haptics';
 
 interface ChipProps {
   label: string;
@@ -14,7 +15,10 @@ export const Chip: React.FC<ChipProps> = ({ label, selected = false, onPress, ic
   const { theme } = useTheme();
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptics.select();
+        onPress?.();
+      }}
       style={({ pressed }) => [
         styles.chip,
         {

@@ -9,6 +9,7 @@ import { CourseListScreen } from '../screens/student/CourseListScreen';
 import { MyCoursesScreen } from '../screens/student/MyCoursesScreen';
 import { LiveListScreen } from '../screens/live/LiveListScreen';
 import { ProfileScreen } from '../screens/student/ProfileScreen';
+import { FEATURES } from '../constants/features';
 
 const Tab = createBottomTabNavigator<StudentTabParamList>();
 
@@ -62,7 +63,7 @@ export const StudentTabNavigator: React.FC = () => {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Explore" component={CourseListScreen} />
       <Tab.Screen name="MyCourses" component={MyCoursesScreen} />
-      <Tab.Screen name="Live" component={LiveListScreen} />
+      {FEATURES.live && <Tab.Screen name="Live" component={LiveListScreen} />}
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

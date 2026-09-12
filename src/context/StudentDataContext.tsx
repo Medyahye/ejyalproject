@@ -31,6 +31,8 @@ interface StudentDataContextValue {
 
   courseProgress: Record<string, number>;
   setCourseProgress: (courseId: string, progress: number) => void;
+
+  refresh: () => Promise<void>;
 }
 
 const StudentDataContext = createContext<StudentDataContextValue | undefined>(undefined);
@@ -112,6 +114,10 @@ export const StudentDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     [enrollmentIdByCourse]
   );
 
+  const refresh = useCallback(async () => {
+    await Promise.all([loadAll(), refreshCatalog()]);
+  }, [loadAll, refreshCatalog]);
+
   const value = useMemo(
     () => ({
       favoriteIds,
@@ -128,8 +134,9 @@ export const StudentDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
       isPurchased,
       courseProgress: progressMap,
       setCourseProgress,
+      refresh,
     }),
-    [favoriteIds, toggleFavorite, isFavorite, cartItems, addToCart, removeFromCart, isInCart, clearCart, cartTotal, purchasedCourseIds, purchaseCart, isPurchased, progressMap, setCourseProgress]
+    [favoriteIds, toggleFavorite, isFavorite, cartItems, addToCart, removeFromCart, isInCart, clearCart, cartTotal, purchasedCourseIds, purchaseCart, isPurchased, progressMap, setCourseProgress, refresh]
   );
 
   return <StudentDataContext.Provider value={value}>{children}</StudentDataContext.Provider>;

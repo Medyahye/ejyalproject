@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { ZoomIn, FadeInDown } from 'react-native-reanimated';
 import { useTheme } from '../../theme';
 import { Button } from './Button';
 
@@ -16,21 +17,29 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon = 'file-tray-outlin
   const { theme } = useTheme();
   return (
     <View style={styles.wrap}>
-      <View style={[styles.iconCircle, { backgroundColor: theme.colors.primarySoft }]}>
-        <Ionicons name={icon} size={36} color={theme.colors.primary} />
-      </View>
-      <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
-      {description && <Text style={[styles.desc, { color: theme.colors.textSecondary }]}>{description}</Text>}
+      <Animated.View entering={ZoomIn.delay(60).springify()} style={[styles.iconCircle, { backgroundColor: theme.colors.primarySoft }]}>
+        <Ionicons name={icon} size={26} color={theme.colors.primary} />
+      </Animated.View>
+      <Animated.Text entering={FadeInDown.delay(140).springify()} style={[styles.title, { color: theme.colors.text }]}>
+        {title}
+      </Animated.Text>
+      {description && (
+        <Animated.Text entering={FadeInDown.delay(180).springify()} style={[styles.desc, { color: theme.colors.textMuted }]}>
+          {description}
+        </Animated.Text>
+      )}
       {actionLabel && onAction && (
-        <Button label={actionLabel} onPress={onAction} fullWidth={false} style={{ marginTop: 20, paddingHorizontal: 28 }} />
+        <Animated.View entering={FadeInDown.delay(220).springify()}>
+          <Button label={actionLabel} onPress={onAction} fullWidth={false} style={{ marginTop: 18, paddingHorizontal: 24 }} />
+        </Animated.View>
       )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, paddingHorizontal: 32 },
-  iconCircle: { width: 84, height: 84, borderRadius: 42, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
-  title: { fontSize: 17, fontWeight: '800', marginBottom: 6, textAlign: 'center' },
-  desc: { fontSize: 13, textAlign: 'center', lineHeight: 20 },
+  wrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 36, paddingHorizontal: 32 },
+  iconCircle: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  title: { fontSize: 15.5, fontWeight: '700', marginBottom: 4, textAlign: 'center' },
+  desc: { fontSize: 12.5, textAlign: 'center', lineHeight: 18 },
 });

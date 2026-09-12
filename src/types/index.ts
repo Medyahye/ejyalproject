@@ -10,11 +10,14 @@ export interface BaseUser {
   createdAt: string;
 }
 
+export type GradeTrack = 'bac-c' | 'bac-d' | 'bac-a' | 'bac-o' | 'brevet' | 'concours';
+
 export interface Student extends BaseUser {
   role: 'student';
   enrolledCourseIds: string[];
   favoriteCourseIds: string[];
   purchasedCourseIds: string[];
+  gradeTrack: GradeTrack | '';
 }
 
 export interface Teacher extends BaseUser {
@@ -25,6 +28,7 @@ export interface Teacher extends BaseUser {
   totalRevenue: number;
   rating: number;
   specialties: string[];
+  teachingCategoryIds: string[];
 }
 
 export type AppUser = Student | Teacher;
@@ -84,6 +88,7 @@ export interface Course {
   ratingCount: number;
   studentsCount: number;
   level: CourseLevel;
+  gradeTracks: GradeTrack[];
   language: string;
   durationHours: number;
   lastUpdated: string;

@@ -11,10 +11,10 @@ docker compose up -d --build
 ```
 
 Cela lance :
-- **db** : PostgreSQL 16 sur `localhost:5432` (volume persistant `postgres_data`)
-- **backend** : API Django sur `http://localhost:8000`, avec migrations + seed de données de démo appliqués automatiquement au démarrage
+- **db** : PostgreSQL 16 sur `localhost:5433` (volume persistant `postgres_data`)
+- **backend** : API Django sur `http://localhost:8001`, avec migrations + seed de données de démo appliqués automatiquement au démarrage
 
-L'API est alors accessible sur `http://localhost:8000/api/`, l'admin Django sur `http://localhost:8000/admin/`.
+L'API est alors accessible sur `http://localhost:8001/api/`, l'admin Django sur `http://localhost:8001/admin/`.
 
 Pour arrêter : `docker compose down` (ajoutez `-v` pour aussi supprimer les données Postgres).
 

@@ -1,8 +1,11 @@
 import uuid
 
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+
+from accounts.models import User
 
 
 class Category(models.Model):
@@ -47,6 +50,11 @@ class Course(models.Model):
     students_count = models.PositiveIntegerField(default=0)
 
     level = models.CharField(max_length=20, choices=Level.choices)
+    grade_tracks = ArrayField(
+        models.CharField(max_length=10, choices=User.GradeTrack.choices),
+        default=list, blank=True,
+        help_text='Filières Bac/Brevet/Concours pour lesquelles ce cours est pertinent.',
+    )
     language = models.CharField(max_length=50, default='Français')
     duration_hours = models.PositiveIntegerField(default=0)
     last_updated = models.DateField(auto_now=True)
