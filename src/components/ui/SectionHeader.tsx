@@ -30,8 +30,8 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({ title, subtitle, a
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 14 },
-  title: { fontSize: 19, fontWeight: '700' },
-  subtitle: { fontSize: 12.5, marginTop: 3 },
+  title: { fontSize: 20.5, fontWeight: '700' },
+  subtitle: { fontSize: 13.5, marginTop: 3 },
   actionRow: { flexDirection: 'row', alignItems: 'center' },
-  actionText: { fontSize: 13, fontWeight: '700', marginRight: 2 },
+  actionText: { fontSize: 13.5, fontWeight: '700', marginRight: 2 },
 });

@@ -87,6 +87,12 @@ export const VideoPlayerScreen: React.FC = () => {
 
         <View style={styles.bottomControls}>
           <Text style={styles.lessonTitle} numberOfLines={2}>{lesson.title}</Text>
+          {!!lesson.pdfUri && (
+            <Pressable style={styles.pdfChip}>
+              <Ionicons name="document-text-outline" size={13} color="#fff" />
+              <Text style={styles.pdfChipText} numberOfLines={1}>{lesson.pdfTitle || 'Support PDF'}</Text>
+            </Pressable>
+          )}
           <ProgressBar progress={progress} color="#fff" trackColor="rgba(255,255,255,0.25)" height={4} />
           <View style={styles.controlsRow}>
             <Text style={styles.timeText}>
@@ -140,7 +146,9 @@ const styles = StyleSheet.create({
   centerPlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   playCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   bottomControls: { padding: 16 },
-  lessonTitle: { color: '#fff', fontSize: 15, fontWeight: '700', marginBottom: 12 },
+  lessonTitle: { color: '#fff', fontSize: 15, fontWeight: '700', marginBottom: 10 },
+  pdfChip: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 8, paddingVertical: 5, paddingHorizontal: 9, marginBottom: 12, maxWidth: '80%' },
+  pdfChipText: { color: '#fff', fontSize: 11, fontWeight: '700', marginLeft: 6 },
   controlsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
   timeText: { color: 'rgba(255,255,255,0.85)', fontSize: 11.5, fontWeight: '600' },
   speedText: { color: '#fff', fontSize: 12.5, fontWeight: '700' },

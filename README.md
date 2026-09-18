@@ -1,4 +1,4 @@
-# EduConnect
+# Générations du Futur
 
 Application mobile de formation en ligne construite avec **React Native + Expo + TypeScript**, avec un backend **Django REST Framework + PostgreSQL** dans [`backend/`](backend/README.md). Le front peut aussi tourner seul avec les données simulées (mock data) — voir ci-dessous.
 

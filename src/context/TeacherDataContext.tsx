@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
-import { Course, Payment } from '../types';
+import { Course, GradeTrack, Payment } from '../types';
 import { createCourse, deleteCourseRequest, updateCourseRequest } from '../api/catalog';
 import { fetchPayments } from '../api/commerce';
 import { computeMonthlyRevenue, MonthlyRevenue } from '../utils/analytics';
@@ -15,6 +15,7 @@ interface NewCoursePayload {
   price: number;
   level: Course['level'];
   thumbnail: string;
+  gradeTracks: GradeTrack[];
 }
 
 interface TeacherDataContextValue {
@@ -62,6 +63,7 @@ export const TeacherDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
         level: payload.level,
         thumbnail: payload.thumbnail || `https://picsum.photos/seed/${Date.now()}/600/400`,
         coverGradient: GRADIENTS[Math.floor(Math.random() * GRADIENTS.length)],
+        gradeTracks: payload.gradeTracks,
       });
       await refreshCatalog();
       return created;

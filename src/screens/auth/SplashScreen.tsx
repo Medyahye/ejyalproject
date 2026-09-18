@@ -92,7 +92,7 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
           <Ionicons name="school" size={48} color={theme.colors.primary} />
           <Animated.View style={[styles.shimmer, shimmerStyle]} />
         </Animated.View>
-        <Animated.Text style={[styles.appName, nameStyle]}>EduConnect</Animated.Text>
+        <Animated.Text style={[styles.appName, nameStyle]}>Générations du Futur</Animated.Text>
         <Animated.Text style={[styles.tagline, taglineStyle]}>Apprenez. Progressez. Réussissez.</Animated.Text>
       </View>
 
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.9)',
     opacity: 0.35,
   },
-  appName: { fontSize: 27, fontWeight: '700', color: '#fff', letterSpacing: 0.5 },
+  appName: { fontSize: 22, fontWeight: '800', color: '#fff', letterSpacing: 0.3, textAlign: 'center', maxWidth: 260 },
   tagline: { fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 8 },
   dotsRow: { position: 'absolute', bottom: 64, flexDirection: 'row', gap: 8 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#fff' },

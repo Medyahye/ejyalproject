@@ -1,6 +1,6 @@
-# EduConnect — Backend (Django + DRF + PostgreSQL)
+# Générations du Futur — Backend (Django + DRF + PostgreSQL)
 
-API REST pour l'application EduConnect. Reproduit exactement les types TypeScript du front (`src/types/index.ts`) : `Course`, `Student`, `Teacher`, `Payment`, `LiveSession`, etc. — les clés JSON sont en camelCase pour être consommées telles quelles côté React Native.
+API REST pour l'application Générations du Futur. Reproduit exactement les types TypeScript du front (`src/types/index.ts`) : `Course`, `Student`, `Teacher`, `Payment`, `LiveSession`, etc. — les clés JSON sont en camelCase pour être consommées telles quelles côté React Native.
 
 ## Démarrer avec Docker (recommandé)
 

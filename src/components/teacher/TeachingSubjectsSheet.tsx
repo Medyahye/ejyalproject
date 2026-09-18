@@ -57,7 +57,7 @@ export const TeachingSubjectsSheet: React.FC<TeachingSubjectsSheetProps> = ({ vi
                   ]}
                 >
                   <View style={[styles.cardIcon, { backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : theme.colors.primarySoft }]}>
-                    <Ionicons name={cat.icon as any} size={20} color={isSelected ? '#fff' : theme.colors.primary} />
+                    <Ionicons name={cat.icon as any} size={23} color={isSelected ? '#fff' : theme.colors.primary} />
                   </View>
                   <Text numberOfLines={2} style={[styles.cardLabel, { color: isSelected ? '#fff' : theme.colors.text }]}>{cat.name}</Text>
                   {isSelected && (
@@ -83,12 +83,12 @@ const styles = StyleSheet.create({
   sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 36 },
   handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 18 },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 },
-  title: { fontSize: 17, fontWeight: '700' },
-  subtitle: { fontSize: 12.5, marginTop: 3, maxWidth: 260 },
+  title: { fontSize: 19, fontWeight: '700' },
+  subtitle: { fontSize: 13.5, marginTop: 4, maxWidth: 260 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingBottom: 4 },
-  card: { width: '30%', borderRadius: 16, borderWidth: 1.5, padding: 12, alignItems: 'flex-start' },
-  cardIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  cardLabel: { fontSize: 11.5, fontWeight: '700', lineHeight: 15 },
+  card: { width: '30%', borderRadius: 16, borderWidth: 1.5, padding: 13, alignItems: 'flex-start' },
+  cardIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 9 },
+  cardLabel: { fontSize: 13, fontWeight: '700', lineHeight: 17 },
   checkBadge: {
     position: 'absolute', top: 8, right: 8, width: 18, height: 18, borderRadius: 9,
     backgroundColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center',

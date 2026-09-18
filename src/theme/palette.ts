@@ -1,6 +1,17 @@
 // Raw color primitives. Semantic mapping happens in colors.ts.
 export const palette = {
-  // Primary — blue, trustworthy institutional feel for a school brand
+  // Primary — Générations du Futur green
+  green50: '#E8FBF4',
+  green100: '#C7F5E4',
+  green300: '#5FE0B3',
+  green400: '#17CBA2',
+  green500: '#00B894',
+  green600: '#009975',
+  green700: '#00785C',
+  green800: '#00614A',
+  green900: '#004537',
+
+  // Secondary — blue, complements the school's green brand
   blue50: '#EAF2FF',
   blue100: '#D3E4FE',
   blue300: '#8FBBFC',
@@ -10,14 +21,6 @@ export const palette = {
   blue700: '#2350AC',
   blue800: '#1B3D82',
   blue900: '#142C5E',
-
-  // Secondary — teal/green, growth & success (pairs with blue for the school brand)
-  green50: '#E8FBF4',
-  green100: '#C7F5E4',
-  green300: '#5FE0B3',
-  green500: '#00B894',
-  green600: '#009975',
-  green700: '#00785C',
 
   // Accent — warm gold for ratings, streaks, highlights
   gold300: '#FFE29A',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, StyleSheet, StyleProp, ViewStyle, RefreshControl } from 'react-native';
+import { View, ScrollView, StyleSheet, StyleProp, ViewStyle, RefreshControl, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView, Edge } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme';
 
@@ -29,16 +29,19 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   if (scroll) {
     return (
       <SafeAreaView edges={edges} style={[styles.flex, { backgroundColor: theme.colors.background }, style]}>
-        <ScrollView
-          style={styles.flex}
-          contentContainerStyle={[padded && styles.padded, contentContainerStyle]}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} /> : undefined
-          }
-        >
-          {children}
-        </ScrollView>
+        <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView
+            style={styles.flex}
+            contentContainerStyle={[padded && styles.padded, contentContainerStyle]}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={
+              onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} /> : undefined
+            }
+          >
+            {children}
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     );
   }

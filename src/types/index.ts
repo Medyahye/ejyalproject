@@ -10,7 +10,7 @@ export interface BaseUser {
   createdAt: string;
 }
 
-export type GradeTrack = 'bac-c' | 'bac-d' | 'bac-a' | 'bac-o' | 'brevet' | 'concours';
+export type GradeTrack = 'bac-c' | 'bac-d' | 'bac-lm' | 'bac-lo' | 'bac-t' | 'brevet' | 'concours';
 
 export interface Student extends BaseUser {
   role: 'student';
@@ -48,6 +48,10 @@ export interface Lesson {
   isPreview: boolean;
   videoUrl: string;
   thumbnail: string;
+  pdfTitle?: string;
+  pdfSizeMb?: number;
+  pdfPages?: number;
+  pdfUri?: string;
 }
 
 export interface CoursePdf {
@@ -127,6 +131,7 @@ export interface LiveSession {
   durationMinutes: number;
   status: LiveStatus;
   viewersCount: number;
+  reactionsCount: number;
   thumbnail: string;
   coverGradient: readonly [string, string];
 }

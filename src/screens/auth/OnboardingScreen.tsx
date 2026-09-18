@@ -14,13 +14,13 @@ const slides = [
     icon: 'rocket-outline' as const,
     title: 'Apprenez à votre rythme',
     description: 'Des centaines de cours vidéo créés par des experts, accessibles à tout moment, où que vous soyez.',
-    gradient: ['#5B9CFF', '#3D7FF7'] as const,
+    gradient: ['#5FE0B3', '#00B894'] as const,
   },
   {
     icon: 'ribbon-outline' as const,
     title: 'Progressez avec des experts',
     description: 'Suivez votre progression, obtenez des supports PDF et échangez en direct avec vos formateurs.',
-    gradient: ['#3D7FF7', '#2C63D6'] as const,
+    gradient: ['#00B894', '#009975'] as const,
   },
   {
     icon: 'trending-up-outline' as const,

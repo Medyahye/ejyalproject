@@ -34,17 +34,17 @@ export const StatisticsScreen: React.FC<Props> = ({ navigation }) => {
 
       <View style={styles.statsRow}>
         <Animated.View entering={FadeInDown.delay(80).springify()} style={[styles.statCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
-          <Ionicons name="people" size={20} color={theme.colors.primary} />
+          <Ionicons name="people" size={23} color={theme.colors.primary} />
           <Text style={[styles.statValue, { color: theme.colors.text }]}>{formatCompactNumber(totalStudents)}</Text>
           <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Étudiants</Text>
         </Animated.View>
         <Animated.View entering={FadeInDown.delay(130).springify()} style={[styles.statCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
-          <Ionicons name="chatbubbles" size={20} color={theme.colors.info} />
+          <Ionicons name="chatbubbles" size={23} color={theme.colors.info} />
           <Text style={[styles.statValue, { color: theme.colors.text }]}>{formatCompactNumber(totalReviews)}</Text>
           <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Avis reçus</Text>
         </Animated.View>
         <Animated.View entering={FadeInDown.delay(180).springify()} style={[styles.statCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
-          <Ionicons name="star" size={20} color={theme.colors.warning} />
+          <Ionicons name="star" size={23} color={theme.colors.warning} />
           <Text style={[styles.statValue, { color: theme.colors.text }]}>{avgRating.toFixed(1)}</Text>
           <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Note moyenne</Text>
         </Animated.View>
@@ -66,7 +66,7 @@ export const StatisticsScreen: React.FC<Props> = ({ navigation }) => {
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(300).springify()}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Inscriptions par cours</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Inscriptions par package</Text>
         <View style={[styles.card, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
           {myCourses.map((c) => (
             <View key={c.id} style={{ marginBottom: 16 }}>
@@ -99,21 +99,21 @@ export const StatisticsScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 20 },
-  title: { fontSize: 19, fontWeight: '700', marginLeft: 4 },
-  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 24 },
-  statCard: { flex: 1, alignItems: 'center', paddingVertical: 16, borderRadius: 16 },
-  statValue: { fontSize: 16, fontWeight: '700', marginTop: 8 },
-  statLabel: { fontSize: 10, marginTop: 2, fontWeight: '600' },
-  sectionTitle: { fontSize: 15, fontWeight: '700', marginBottom: 12 },
-  card: { borderRadius: 16, padding: 16, marginBottom: 24 },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  ratingStar: { fontSize: 12, fontWeight: '700', width: 32 },
-  ratingPercent: { fontSize: 11.5, fontWeight: '600', width: 32, textAlign: 'right' },
-  courseStatRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  courseStatTitle: { fontSize: 12.5, fontWeight: '700', flex: 1, marginRight: 8 },
-  courseStatValue: { fontSize: 12, fontWeight: '700' },
-  trendRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
-  trendMonth: { fontSize: 12.5, fontWeight: '600', width: 70 },
-  trendValue: { fontSize: 13, fontWeight: '700' },
+  header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 22 },
+  title: { fontSize: 21, fontWeight: '700', marginLeft: 4 },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 26 },
+  statCard: { flex: 1, alignItems: 'center', paddingVertical: 18, borderRadius: 16 },
+  statValue: { fontSize: 18.5, fontWeight: '700', marginTop: 9 },
+  statLabel: { fontSize: 12, marginTop: 3, fontWeight: '600' },
+  sectionTitle: { fontSize: 16.5, fontWeight: '700', marginBottom: 13 },
+  card: { borderRadius: 16, padding: 17, marginBottom: 26 },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 11 },
+  ratingStar: { fontSize: 13.5, fontWeight: '700', width: 36 },
+  ratingPercent: { fontSize: 13, fontWeight: '600', width: 36, textAlign: 'right' },
+  courseStatRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 },
+  courseStatTitle: { fontSize: 14, fontWeight: '700', flex: 1, marginRight: 8 },
+  courseStatValue: { fontSize: 13.5, fontWeight: '700' },
+  trendRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 9 },
+  trendMonth: { fontSize: 14, fontWeight: '600', width: 74 },
+  trendValue: { fontSize: 14.5, fontWeight: '700' },
 });

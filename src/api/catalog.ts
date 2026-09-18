@@ -1,4 +1,4 @@
-import { Category, Course, CourseLevel, CoursePdf, Lesson, Review } from '../types';
+import { Category, Course, CourseLevel, CoursePdf, GradeTrack, Lesson, Review } from '../types';
 import { apiRequest } from './client';
 
 export function fetchCourses(): Promise<Course[]> {
@@ -26,6 +26,7 @@ export interface NewCoursePayload {
   level: CourseLevel;
   thumbnail: string;
   coverGradient?: readonly [string, string];
+  gradeTracks?: GradeTrack[];
 }
 
 export function createCourse(payload: NewCoursePayload): Promise<Course> {
@@ -47,6 +48,10 @@ export interface NewLessonPayload {
   videoUrl?: string;
   thumbnail?: string;
   order?: number;
+  pdfTitle?: string;
+  pdfSizeMb?: number;
+  pdfPages?: number;
+  pdfUri?: string;
 }
 
 export function createLesson(courseId: string, payload: NewLessonPayload): Promise<Lesson> {

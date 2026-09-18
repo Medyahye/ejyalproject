@@ -17,7 +17,7 @@ export const TeacherMyCoursesScreen: React.FC<Props> = ({ navigation }) => {
   const { myCourses, deleteCourse } = useTeacherData();
 
   const confirmDelete = (course: Course) => {
-    Alert.alert('Supprimer le cours', `Voulez-vous vraiment supprimer "${course.title}" ? Cette action est irréversible.`, [
+    Alert.alert('Supprimer le package', `Voulez-vous vraiment supprimer "${course.title}" ? Cette action est irréversible.`, [
       { text: 'Annuler', style: 'cancel' },
       { text: 'Supprimer', style: 'destructive', onPress: () => deleteCourse(course.id) },
     ]);
@@ -27,8 +27,8 @@ export const TeacherMyCoursesScreen: React.FC<Props> = ({ navigation }) => {
     <ScreenContainer edges={['top']}>
       <Animated.View entering={FadeInDown.delay(20).springify()} style={styles.header}>
         <IconButton icon="menu-outline" onPress={() => navigation.openDrawer()} variant="ghost" style={{ marginLeft: -8 }} />
-        <Text style={[styles.title, { color: theme.colors.text }]}>Mes cours ({myCourses.length})</Text>
-        <IconButton icon="add" onPress={() => navigation.navigate('AddCourse')} />
+        <Text style={[styles.title, { color: theme.colors.text }]}>Mes packages ({myCourses.length})</Text>
+        <IconButton icon="add" size={44} onPress={() => navigation.navigate('AddCourse')} />
       </Animated.View>
 
       <FlatList
@@ -51,14 +51,14 @@ export const TeacherMyCoursesScreen: React.FC<Props> = ({ navigation }) => {
                 {item.isBestseller && <Badge label="Best-seller" tone="warning" small />}
               </View>
               <Text numberOfLines={2} style={[styles.courseTitle, { color: theme.colors.text }]}>{item.title}</Text>
-              <RatingStars rating={item.rating} size={12} count={item.ratingCount} />
+              <RatingStars rating={item.rating} size={13.5} count={item.ratingCount} />
               <View style={styles.metaRow}>
                 <View style={styles.metaItem}>
-                  <Ionicons name="people-outline" size={13} color={theme.colors.textMuted} />
+                  <Ionicons name="people-outline" size={15} color={theme.colors.textMuted} />
                   <Text style={[styles.metaText, { color: theme.colors.textMuted }]}>{item.studentsCount.toLocaleString('fr-FR')}</Text>
                 </View>
                 <View style={styles.metaItem}>
-                  <Ionicons name="pricetag-outline" size={13} color={theme.colors.textMuted} />
+                  <Ionicons name="pricetag-outline" size={15} color={theme.colors.textMuted} />
                   <Text style={[styles.metaText, { color: theme.colors.textMuted }]}>{formatPrice(item.price)}</Text>
                 </View>
               </View>
@@ -67,11 +67,11 @@ export const TeacherMyCoursesScreen: React.FC<Props> = ({ navigation }) => {
                   onPress={() => navigation.navigate('EditCourse', { courseId: item.id })}
                   style={[styles.actionBtn, { backgroundColor: theme.colors.primarySoft }]}
                 >
-                  <Ionicons name="create-outline" size={15} color={theme.colors.primary} />
+                  <Ionicons name="create-outline" size={17} color={theme.colors.primary} />
                   <Text style={[styles.actionText, { color: theme.colors.primary }]}>Modifier</Text>
                 </Pressable>
                 <Pressable onPress={() => confirmDelete(item)} style={[styles.actionBtn, { backgroundColor: theme.colors.dangerLight }]}>
-                  <Ionicons name="trash-outline" size={15} color={theme.colors.danger} />
+                  <Ionicons name="trash-outline" size={17} color={theme.colors.danger} />
                   <Text style={[styles.actionText, { color: theme.colors.danger }]}>Supprimer</Text>
                 </Pressable>
               </View>
@@ -81,9 +81,9 @@ export const TeacherMyCoursesScreen: React.FC<Props> = ({ navigation }) => {
         ListEmptyComponent={
           <EmptyState
             icon="book-outline"
-            title="Aucun cours publié"
-            description="Créez votre premier cours et commencez à générer des revenus."
-            actionLabel="Ajouter un cours"
+            title="Aucun package publié"
+            description="Créez votre premier package et commencez à générer des revenus."
+            actionLabel="Ajouter un package"
             onAction={() => navigation.navigate('AddCourse')}
           />
         }
@@ -94,16 +94,16 @@ export const TeacherMyCoursesScreen: React.FC<Props> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 8, marginBottom: 20 },
-  title: { fontSize: 17, fontWeight: '700', flex: 1, marginLeft: 4 },
+  title: { fontSize: 19.5, fontWeight: '700', flex: 1, marginLeft: 4 },
   card: { flexDirection: 'row', borderRadius: 16, marginBottom: 14, overflow: 'hidden' },
-  image: { width: 100, height: '100%', minHeight: 150 },
-  body: { flex: 1, padding: 12 },
-  badgeRow: { flexDirection: 'row', gap: 6, marginBottom: 6 },
-  courseTitle: { fontSize: 13.5, fontWeight: '700', lineHeight: 18, marginBottom: 6 },
-  metaRow: { flexDirection: 'row', marginTop: 8 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', marginRight: 16 },
-  metaText: { fontSize: 11.5, marginLeft: 4 },
-  actionsRow: { flexDirection: 'row', marginTop: 12, gap: 8 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 7, paddingHorizontal: 10, borderRadius: 10 },
-  actionText: { fontSize: 11.5, fontWeight: '700', marginLeft: 4 },
+  image: { width: 108, height: '100%', minHeight: 160 },
+  body: { flex: 1, padding: 14 },
+  badgeRow: { flexDirection: 'row', gap: 6, marginBottom: 7 },
+  courseTitle: { fontSize: 15.5, fontWeight: '700', lineHeight: 20, marginBottom: 7 },
+  metaRow: { flexDirection: 'row', marginTop: 9 },
+  metaItem: { flexDirection: 'row', alignItems: 'center', marginRight: 18 },
+  metaText: { fontSize: 13, marginLeft: 5 },
+  actionsRow: { flexDirection: 'row', marginTop: 13, gap: 8 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9, paddingHorizontal: 12, borderRadius: 11 },
+  actionText: { fontSize: 13, fontWeight: '700', marginLeft: 5 },
 });

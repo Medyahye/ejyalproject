@@ -82,6 +82,12 @@ class Lesson(models.Model):
     thumbnail = models.URLField(blank=True, default='')
     order = models.PositiveIntegerField(default=0)
 
+    # Optional PDF support attached to this specific chapter/lesson.
+    pdf_title = models.CharField(max_length=255, blank=True, default='')
+    pdf_size_mb = models.DecimalField(max_digits=6, decimal_places=1, default=0)
+    pdf_pages = models.PositiveIntegerField(default=0)
+    pdf_uri = models.URLField(blank=True, default='')
+
     class Meta:
         ordering = ['order']
 

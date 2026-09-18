@@ -15,13 +15,14 @@ class LiveSessionSerializer(serializers.ModelSerializer):
     scheduledAt = serializers.DateTimeField(source='scheduled_at')
     durationMinutes = serializers.IntegerField(source='duration_minutes')
     viewersCount = serializers.IntegerField(source='viewers_count', read_only=True)
+    reactionsCount = serializers.IntegerField(source='reactions_count', read_only=True)
 
     class Meta:
         model = LiveSession
         fields = [
             'id', 'title', 'description', 'teacherId', 'teacherName', 'teacherAvatar',
             'courseId', 'categoryName', 'scheduledAt', 'durationMinutes', 'status',
-            'viewersCount', 'thumbnail', 'coverGradient',
+            'viewersCount', 'reactionsCount', 'thumbnail', 'coverGradient',
         ]
         read_only_fields = ['id']
 

@@ -4,8 +4,9 @@
  * codebase untouched, only the entry points are hidden while `false`.
  */
 export const FEATURES = {
-  live: false,
+  live: true,
   pdfLibrary: false,
-  gradeTrack: false,
+  gradeTrack: true,
   advancedFilters: false,
+  revenueChart: false,
 };

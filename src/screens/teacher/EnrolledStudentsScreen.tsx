@@ -37,11 +37,11 @@ export const EnrolledStudentsScreen: React.FC<Props> = ({ navigation }) => {
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(70).springify()} style={[styles.searchBar, { backgroundColor: theme.colors.backgroundAlt }]}>
-        <Ionicons name="search" size={16} color={theme.colors.textMuted} />
+        <Ionicons name="search" size={18} color={theme.colors.textMuted} />
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Rechercher un étudiant ou un cours..."
+          placeholder="Rechercher un étudiant ou un package..."
           placeholderTextColor={theme.colors.textMuted}
           style={[styles.searchInput, { color: theme.colors.text }]}
         />
@@ -56,7 +56,7 @@ export const EnrolledStudentsScreen: React.FC<Props> = ({ navigation }) => {
             entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}
             style={[styles.row, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}
           >
-            <Avatar uri={item.avatar} size={44} />
+            <Avatar uri={item.avatar} size={50} />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={[styles.name, { color: theme.colors.text }]}>{item.studentName}</Text>
               <Text numberOfLines={1} style={[styles.course, { color: theme.colors.textSecondary }]}>{item.courseTitle}</Text>
@@ -71,12 +71,12 @@ export const EnrolledStudentsScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 16 },
-  title: { fontSize: 17, fontWeight: '700', marginLeft: 4, flex: 1 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 14, height: 44, marginBottom: 16 },
-  searchInput: { flex: 1, marginLeft: 8, fontSize: 13.5 },
-  row: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 14, marginBottom: 10 },
-  name: { fontSize: 13.5, fontWeight: '700' },
-  course: { fontSize: 12, marginTop: 3 },
-  date: { fontSize: 11, marginTop: 3 },
+  header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 18 },
+  title: { fontSize: 19.5, fontWeight: '700', marginLeft: 4, flex: 1 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 15, height: 48, marginBottom: 18 },
+  searchInput: { flex: 1, marginLeft: 9, fontSize: 15 },
+  row: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, marginBottom: 10 },
+  name: { fontSize: 15.5, fontWeight: '700' },
+  course: { fontSize: 13.5, marginTop: 3 },
+  date: { fontSize: 12.5, marginTop: 3 },
 });

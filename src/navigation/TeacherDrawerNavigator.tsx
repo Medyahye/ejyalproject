@@ -20,7 +20,7 @@ const Drawer = createDrawerNavigator<TeacherDrawerParamList>();
 
 const menuItems: Array<{ route: keyof TeacherDrawerParamList; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
   { route: 'Dashboard', label: 'Tableau de bord', icon: 'grid-outline' },
-  { route: 'TeacherMyCourses', label: 'Mes cours', icon: 'book-outline' },
+  { route: 'TeacherMyCourses', label: 'Mes packages', icon: 'book-outline' },
   { route: 'Statistics', label: 'Statistiques', icon: 'stats-chart-outline' },
   { route: 'Revenue', label: 'Revenus', icon: 'cash-outline' },
   { route: 'EnrolledStudents', label: 'Étudiants inscrits', icon: 'people-outline' },
@@ -37,7 +37,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
       <LinearGradient colors={theme.colors.gradientPrimary} style={styles.header}>
-        <Avatar uri={teacher?.avatar} size={64} ring />
+        <Avatar uri={teacher?.avatar} size={72} ring />
         <Text style={styles.name}>{teacher?.fullName}</Text>
         <Text style={styles.headline} numberOfLines={2}>
           {teacher?.headline}
@@ -55,14 +55,14 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
                 { backgroundColor: focused ? theme.colors.primarySoft : 'transparent' },
               ]}
             >
-              <Ionicons name={item.icon} size={20} color={focused ? theme.colors.primary : theme.colors.textSecondary} />
+              <Ionicons name={item.icon} size={23} color={focused ? theme.colors.primary : theme.colors.textSecondary} />
               <Text style={[styles.menuLabel, { color: focused ? theme.colors.primary : theme.colors.text }]}>{item.label}</Text>
             </Pressable>
           );
         })}
       </DrawerContentScrollView>
       <Pressable onPress={logout} style={[styles.logout, { borderTopColor: theme.colors.border }]}>
-        <Ionicons name="log-out-outline" size={20} color={theme.colors.danger} />
+        <Ionicons name="log-out-outline" size={23} color={theme.colors.danger} />
         <Text style={[styles.menuLabel, { color: theme.colors.danger }]}>Déconnexion</Text>
       </Pressable>
     </View>
@@ -87,10 +87,10 @@ export const TeacherDrawerNavigator: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  header: { paddingTop: 60, paddingBottom: 24, paddingHorizontal: 20, borderBottomRightRadius: 28 },
-  name: { fontSize: 17, fontWeight: '800', color: '#fff', marginTop: 12 },
-  headline: { fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 4, lineHeight: 17 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 13, paddingHorizontal: 20, marginHorizontal: 12, borderRadius: 12, marginBottom: 2 },
-  menuLabel: { fontSize: 14, fontWeight: '700', marginLeft: 14 },
-  logout: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 32, borderTopWidth: 1 },
+  header: { paddingTop: 60, paddingBottom: 26, paddingHorizontal: 20, borderBottomRightRadius: 28 },
+  name: { fontSize: 19, fontWeight: '800', color: '#fff', marginTop: 13 },
+  headline: { fontSize: 13.5, color: 'rgba(255,255,255,0.85)', marginTop: 4, lineHeight: 19 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15, paddingHorizontal: 20, marginHorizontal: 12, borderRadius: 12, marginBottom: 2 },
+  menuLabel: { fontSize: 15.5, fontWeight: '700', marginLeft: 15 },
+  logout: { flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 32, borderTopWidth: 1 },
 });

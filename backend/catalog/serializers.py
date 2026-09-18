@@ -18,10 +18,17 @@ class LessonSerializer(serializers.ModelSerializer):
     durationMinutes = serializers.IntegerField(source='duration_minutes')
     isPreview = serializers.BooleanField(source='is_preview', required=False)
     videoUrl = serializers.URLField(source='video_url', required=False, allow_blank=True)
+    pdfTitle = serializers.CharField(source='pdf_title', required=False, allow_blank=True)
+    pdfSizeMb = serializers.DecimalField(source='pdf_size_mb', max_digits=6, decimal_places=1, required=False)
+    pdfPages = serializers.IntegerField(source='pdf_pages', required=False)
+    pdfUri = serializers.URLField(source='pdf_uri', required=False, allow_blank=True)
 
     class Meta:
         model = Lesson
-        fields = ['id', 'title', 'durationMinutes', 'isPreview', 'videoUrl', 'thumbnail', 'order']
+        fields = [
+            'id', 'title', 'durationMinutes', 'isPreview', 'videoUrl', 'thumbnail', 'order',
+            'pdfTitle', 'pdfSizeMb', 'pdfPages', 'pdfUri',
+        ]
         read_only_fields = ['id']
 
 

@@ -1,6 +1,7 @@
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db.models import F
 
 from accounts.permissions import IsCourseOwnerOrReadOnly
 
@@ -16,7 +17,7 @@ class LiveSessionViewSet(viewsets.ModelViewSet):
     pagination_class = None
 
     def get_permissions(self):
-        if self.action in ('update', 'partial_update', 'destroy'):
+        if self.action in ('update', 'partial_update', 'destroy', 'start', 'end'):
             return [IsTeacherOwnerOfLive()]
         return super().get_permissions()
 
@@ -31,6 +32,42 @@ class LiveSessionViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=201)
         return Response(LiveChatMessageSerializer(live_session.messages.select_related('user'), many=True).data)
+
+    @action(detail=True, methods=['post'])
+    def join(self, request, pk=None):
+        live_session = self.get_object()
+        LiveSession.objects.filter(pk=live_session.pk).update(viewers_count=F('viewers_count') + 1)
+        live_session.refresh_from_db()
+        return Response(LiveSessionSerializer(live_session).data)
+
+    @action(detail=True, methods=['post'])
+    def leave(self, request, pk=None):
+        live_session = self.get_object()
+        if live_session.viewers_count > 0:
+            LiveSession.objects.filter(pk=live_session.pk).update(viewers_count=F('viewers_count') - 1)
+            live_session.refresh_from_db()
+        return Response(LiveSessionSerializer(live_session).data)
+
+    @action(detail=True, methods=['post'])
+    def react(self, request, pk=None):
+        live_session = self.get_object()
+        LiveSession.objects.filter(pk=live_session.pk).update(reactions_count=F('reactions_count') + 1)
+        live_session.refresh_from_db()
+        return Response(LiveSessionSerializer(live_session).data)
+
+    @action(detail=True, methods=['post'])
+    def start(self, request, pk=None):
+        live_session = self.get_object()
+        live_session.status = LiveSession.Status.LIVE
+        live_session.save(update_fields=['status'])
+        return Response(LiveSessionSerializer(live_session).data)
+
+    @action(detail=True, methods=['post'])
+    def end(self, request, pk=None):
+        live_session = self.get_object()
+        live_session.status = LiveSession.Status.ENDED
+        live_session.save(update_fields=['status'])
+        return Response(LiveSessionSerializer(live_session).data)
 
 
 class IsTeacherOwnerOfLive(IsCourseOwnerOrReadOnly):

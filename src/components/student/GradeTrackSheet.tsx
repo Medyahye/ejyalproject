@@ -40,18 +40,18 @@ export const GradeTrackSheet: React.FC<GradeTrackSheetProps> = ({ visible, curre
                 style={[
                   styles.card,
                   {
-                    backgroundColor: selected ? theme.colors.primary : theme.colors.card,
-                    borderColor: selected ? theme.colors.primary : theme.colors.border,
+                    backgroundColor: selected ? track.color : theme.colors.card,
+                    borderColor: selected ? track.color : theme.colors.border,
                   },
                 ]}
               >
                 <View
                   style={[
                     styles.cardIcon,
-                    { backgroundColor: selected ? 'rgba(255,255,255,0.2)' : theme.colors.primarySoft },
+                    { backgroundColor: selected ? 'rgba(255,255,255,0.22)' : `${track.color}1f` },
                   ]}
                 >
-                  <Ionicons name={track.icon} size={22} color={selected ? '#fff' : theme.colors.primary} />
+                  <Ionicons name={track.icon} size={22} color={selected ? '#fff' : track.color} />
                 </View>
                 <Text style={[styles.cardLabel, { color: selected ? '#fff' : theme.colors.text }]}>{track.shortLabel}</Text>
               </Pressable>

@@ -23,13 +23,18 @@ interface MethodInfo {
   sublabel: string;
   logo: number;
   tone: 'primary' | 'secondary' | 'accent' | 'info';
+  /** Bankily confirms a payment with just the account's secret code. Masrvi, Sedad and
+   * Click all run on the same wallet platform (TagPay) and additionally send a one-time
+   * SMS code to confirm the transaction, matching how each app actually behaves. */
+  requiresOtp: boolean;
+  pinLength: number;
 }
 
 const METHODS: MethodInfo[] = [
-  { id: 'Bankily', label: 'Bankily', sublabel: 'Banque Populaire de Mauritanie', logo: require('../../../assets/payments/bankily.jpg'), tone: 'primary' },
-  { id: 'Masrvi', label: 'Masrvi', sublabel: 'BMCI Mobile', logo: require('../../../assets/payments/masrvi.png'), tone: 'secondary' },
-  { id: 'Sedad', label: 'Sedad', sublabel: 'BMI Mobile', logo: require('../../../assets/payments/sedad.png'), tone: 'accent' },
-  { id: 'Click', label: 'Click', sublabel: 'Banque Nationale de Mauritanie', logo: require('../../../assets/payments/click.jpg'), tone: 'info' },
+  { id: 'Bankily', label: 'Bankily', sublabel: 'Banque Populaire de Mauritanie', logo: require('../../../assets/payments/bankily.jpg'), tone: 'primary', requiresOtp: false, pinLength: 4 },
+  { id: 'Masrvi', label: 'Masrvi', sublabel: 'Banque Mauritanienne pour le Commerce International', logo: require('../../../assets/payments/masrvi.png'), tone: 'secondary', requiresOtp: true, pinLength: 4 },
+  { id: 'Sedad', label: 'Sedad', sublabel: "Banque Mauritanienne pour l'Investissement", logo: require('../../../assets/payments/sedad.png'), tone: 'accent', requiresOtp: true, pinLength: 4 },
+  { id: 'Click', label: 'Click', sublabel: 'Banque Nationale de Mauritanie', logo: require('../../../assets/payments/click.jpg'), tone: 'info', requiresOtp: true, pinLength: 4 },
 ];
 
 export const PaymentScreen: React.FC = () => {
@@ -39,6 +44,8 @@ export const PaymentScreen: React.FC = () => {
   const [activeMethod, setActiveMethod] = useState<MethodInfo | null>(null);
   const [phone, setPhone] = useState('');
   const [passcode, setPasscode] = useState('');
+  const [otpStep, setOtpStep] = useState(false);
+  const [otp, setOtp] = useState('');
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [paidAmount, setPaidAmount] = useState(0);
@@ -52,21 +59,18 @@ export const PaymentScreen: React.FC = () => {
 
   const closeModal = () => {
     if (processing) return;
+    if (otpStep) {
+      setOtpStep(false);
+      setOtp('');
+      return;
+    }
     setActiveMethod(null);
     setPhone('');
     setPasscode('');
   };
 
-  const handlePay = async () => {
+  const submitPayment = async () => {
     if (!activeMethod) return;
-    if (!phone.trim()) {
-      Alert.alert('Numéro requis', `Merci de renseigner le numéro associé à votre compte ${activeMethod.label}.`);
-      return;
-    }
-    if (!passcode.trim()) {
-      Alert.alert('Code secret requis', `Merci de renseigner votre code secret ${activeMethod.label}.`);
-      return;
-    }
     setProcessing(true);
     try {
       const amount = cartTotal;
@@ -75,6 +79,8 @@ export const PaymentScreen: React.FC = () => {
       setActiveMethod(null);
       setPhone('');
       setPasscode('');
+      setOtpStep(false);
+      setOtp('');
       setSuccess(true);
       haptics.success();
     } catch (err) {
@@ -82,6 +88,38 @@ export const PaymentScreen: React.FC = () => {
     } finally {
       setProcessing(false);
     }
+  };
+
+  const handleContinue = () => {
+    if (!activeMethod) return;
+    if (!phone.trim()) {
+      Alert.alert('Numéro requis', `Merci de renseigner le numéro associé à votre compte ${activeMethod.label}.`);
+      return;
+    }
+    if (passcode.length < activeMethod.pinLength) {
+      Alert.alert('Code secret requis', `Merci de renseigner votre code secret ${activeMethod.label}.`);
+      return;
+    }
+    if (activeMethod.requiresOtp) {
+      haptics.select();
+      setOtpStep(true);
+    } else {
+      submitPayment();
+    }
+  };
+
+  const handleVerifyOtp = () => {
+    if (otp.length < 6) {
+      Alert.alert('Code incomplet', 'Merci de saisir le code à 6 chiffres reçu par SMS.');
+      return;
+    }
+    submitPayment();
+  };
+
+  const handleResendOtp = () => {
+    haptics.tap();
+    setOtp('');
+    Alert.alert('Code renvoyé', `Un nouveau code de vérification a été envoyé au ${phone || 'votre numéro'}.`);
   };
 
   if (success) {
@@ -182,45 +220,78 @@ export const PaymentScreen: React.FC = () => {
         </Animated.View>
         <Animated.View entering={FadeInUp.springify().damping(16)} style={[styles.sheet, { backgroundColor: theme.colors.surface }]}>
           <View style={[styles.sheetHandle, { backgroundColor: theme.colors.border }]} />
-          <IconButton icon="close" onPress={closeModal} variant="ghost" size={32} style={styles.sheetClose} />
+          <IconButton icon={otpStep ? 'arrow-back' : 'close'} onPress={closeModal} variant="ghost" size={32} style={styles.sheetClose} />
 
-          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.sheetScroll}>
-            <View style={styles.sheetHero}>
-              <View style={[styles.sheetLogoBox, { backgroundColor: toneColors[activeMethod.tone].soft }]}>
-                <Image source={activeMethod.logo} style={styles.logoImageLarge} resizeMode="contain" />
+          {!otpStep ? (
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.sheetScroll}>
+              <View style={styles.sheetHero}>
+                <View style={[styles.sheetLogoBox, { backgroundColor: toneColors[activeMethod.tone].soft }]}>
+                  <Image source={activeMethod.logo} style={styles.logoImageLarge} resizeMode="contain" />
+                </View>
+                <Text style={[styles.sheetTitle, { color: theme.colors.text }]}>Payer avec {activeMethod.label}</Text>
+                <Text style={[styles.methodSublabel, { color: theme.colors.textMuted }]}>{activeMethod.sublabel}</Text>
               </View>
-              <Text style={[styles.sheetTitle, { color: theme.colors.text }]}>Payer avec {activeMethod.label}</Text>
-              <Text style={[styles.methodSublabel, { color: theme.colors.textMuted }]}>{activeMethod.sublabel}</Text>
-            </View>
 
-            <View style={[styles.amountCard, { backgroundColor: theme.colors.backgroundAlt }]}>
-              <Text style={[styles.amountLabel, { color: theme.colors.textMuted }]}>Montant à payer</Text>
-              <Text style={[styles.amountValue, { color: theme.colors.text }]}>{formatPrice(cartTotal)}</Text>
-            </View>
+              <View style={[styles.amountCard, { backgroundColor: theme.colors.backgroundAlt }]}>
+                <Text style={[styles.amountLabel, { color: theme.colors.textMuted }]}>Montant à payer</Text>
+                <Text style={[styles.amountValue, { color: theme.colors.text }]}>{formatPrice(cartTotal)}</Text>
+              </View>
 
-            <Input
-              label={`Numéro ${activeMethod.label}`}
-              placeholder="2X XX XX XX"
-              icon="call-outline"
-              keyboardType="phone-pad"
-              value={phone}
-              onChangeText={setPhone}
-            />
+              <Input
+                label={`Numéro ${activeMethod.label}`}
+                placeholder="2X XX XX XX"
+                icon="call-outline"
+                keyboardType="phone-pad"
+                value={phone}
+                onChangeText={setPhone}
+              />
 
-            <Text style={[styles.pinLabel, { color: theme.colors.textSecondary }]}>Code secret</Text>
-            <PinInput length={4} value={passcode} onChangeText={setPasscode} />
+              <Text style={[styles.pinLabel, { color: theme.colors.textSecondary }]}>Code secret</Text>
+              <PinInput length={activeMethod.pinLength} value={passcode} onChangeText={setPasscode} />
 
-            <View style={styles.hintRow}>
-              <Ionicons name="shield-checkmark" size={13} color={theme.colors.secondary} />
-              <Text style={[styles.hint, { color: theme.colors.textMuted }]}>
-                Vous recevrez une demande de confirmation {activeMethod.label} pour valider le paiement.
-              </Text>
-            </View>
-          </ScrollView>
+              <View style={styles.hintRow}>
+                <Ionicons name="shield-checkmark" size={13} color={theme.colors.secondary} />
+                <Text style={[styles.hint, { color: theme.colors.textMuted }]}>
+                  {activeMethod.requiresOtp
+                    ? `Un code de vérification par SMS vous sera ensuite demandé pour confirmer le paiement ${activeMethod.label}.`
+                    : `Vous recevrez une demande de confirmation ${activeMethod.label} pour valider le paiement.`}
+                </Text>
+              </View>
+            </ScrollView>
+          ) : (
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.sheetScroll}>
+              <View style={styles.sheetHero}>
+                <View style={[styles.sheetLogoBox, { backgroundColor: toneColors[activeMethod.tone].soft }]}>
+                  <Ionicons name="chatbox-ellipses-outline" size={30} color={toneColors[activeMethod.tone].main} />
+                </View>
+                <Text style={[styles.sheetTitle, { color: theme.colors.text }]}>Code de vérification</Text>
+                <Text style={[styles.methodSublabel, { color: theme.colors.textMuted, textAlign: 'center' }]}>
+                  Entrez le code à 6 chiffres envoyé par SMS {activeMethod.label} au {phone || 'votre numéro'}
+                </Text>
+              </View>
 
-          <Button label={`Confirmer • ${formatPrice(cartTotal)}`} onPress={handlePay} loading={processing} style={{ marginTop: 4 }} />
+              <View style={[styles.amountCard, { backgroundColor: theme.colors.backgroundAlt }]}>
+                <Text style={[styles.amountLabel, { color: theme.colors.textMuted }]}>Montant à payer</Text>
+                <Text style={[styles.amountValue, { color: theme.colors.text }]}>{formatPrice(cartTotal)}</Text>
+              </View>
+
+              <Text style={[styles.pinLabel, { color: theme.colors.textSecondary, textAlign: 'center' }]}>Code OTP</Text>
+              <PinInput length={6} value={otp} onChangeText={setOtp} secure={false} />
+
+              <Pressable onPress={handleResendOtp} style={styles.resendLink} hitSlop={8}>
+                <Text style={[styles.resendLinkText, { color: theme.colors.primary }]}>Vous n'avez rien reçu ? Renvoyer le code</Text>
+              </Pressable>
+            </ScrollView>
+          )}
+
+          <Button
+            label={otpStep ? `Confirmer • ${formatPrice(cartTotal)}` : activeMethod.requiresOtp ? 'Continuer' : `Confirmer • ${formatPrice(cartTotal)}`}
+            onPress={otpStep ? handleVerifyOtp : handleContinue}
+            loading={processing}
+            style={{ marginTop: 4 }}
+          />
           <Pressable onPress={closeModal} disabled={processing} style={styles.cancelLink}>
-            <Text style={[styles.cancelLinkText, { color: theme.colors.textMuted }]}>Annuler</Text>
+            <Text style={[styles.cancelLinkText, { color: theme.colors.textMuted }]}>{otpStep ? 'Retour' : 'Annuler'}</Text>
           </Pressable>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -284,4 +355,6 @@ const styles = StyleSheet.create({
   hint: { flex: 1, fontSize: 11.5, lineHeight: 16 },
   cancelLink: { alignSelf: 'center', marginTop: 14, padding: 4 },
   cancelLinkText: { fontSize: 13, fontWeight: '600' },
+  resendLink: { alignSelf: 'center', marginTop: 20, marginBottom: 4, padding: 4 },
+  resendLinkText: { fontSize: 13, fontWeight: '700' },
 });

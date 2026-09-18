@@ -49,14 +49,14 @@ export const lightColors: ThemeColors = {
   textMuted: palette.gray400,
   textInverse: palette.white,
 
-  primary: palette.blue500,
-  primaryDark: palette.blue700,
-  primaryLight: palette.blue100,
-  primarySoft: palette.blue50,
+  primary: palette.green500,
+  primaryDark: palette.green700,
+  primaryLight: palette.green100,
+  primarySoft: palette.green50,
 
-  secondary: palette.green500,
-  secondaryLight: palette.green100,
-  secondarySoft: palette.green50,
+  secondary: palette.blue500,
+  secondaryLight: palette.blue100,
+  secondarySoft: palette.blue50,
 
   accent: palette.gold500,
   accentLight: palette.gold300,
@@ -72,8 +72,8 @@ export const lightColors: ThemeColors = {
   overlay: 'rgba(14, 14, 19, 0.55)',
   shadow: '#1B1B22',
 
-  gradientPrimary: [palette.blue500, palette.green600] as const,
-  gradientSecondary: [palette.green500, palette.green700] as const,
+  gradientPrimary: [palette.green400, palette.green700] as const,
+  gradientSecondary: [palette.blue500, palette.blue700] as const,
   gradientSunset: [palette.gold500, palette.red500] as const,
   gradientOcean: [palette.blue500, palette.blue700] as const,
 };
@@ -92,13 +92,13 @@ export const darkColors: ThemeColors = {
   textMuted: palette.gray500,
   textInverse: palette.gray900,
 
-  primary: palette.blue400,
-  primaryDark: palette.blue300,
-  primaryLight: palette.blue800,
-  primarySoft: palette.blue900,
+  primary: palette.green400,
+  primaryDark: palette.green300,
+  primaryLight: palette.green800,
+  primarySoft: palette.green900,
 
-  secondary: palette.green300,
-  secondaryLight: palette.green700,
+  secondary: palette.blue300,
+  secondaryLight: palette.blue700,
   secondarySoft: palette.blue900,
 
   accent: palette.gold300,
@@ -115,8 +115,8 @@ export const darkColors: ThemeColors = {
   overlay: 'rgba(0, 0, 0, 0.65)',
   shadow: '#000000',
 
-  gradientPrimary: [palette.blue400, palette.green600] as const,
-  gradientSecondary: [palette.green300, palette.green600] as const,
+  gradientPrimary: [palette.green400, palette.green600] as const,
+  gradientSecondary: [palette.blue400, palette.blue600] as const,
   gradientSunset: [palette.gold500, palette.red500] as const,
   gradientOcean: [palette.blue400, palette.blue600] as const,
 };

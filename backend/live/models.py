@@ -25,6 +25,7 @@ class LiveSession(models.Model):
     duration_minutes = models.PositiveIntegerField(default=60)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.UPCOMING)
     viewers_count = models.PositiveIntegerField(default=0)
+    reactions_count = models.PositiveIntegerField(default=0)
     thumbnail = models.URLField(blank=True, default='')
     cover_gradient_start = models.CharField(max_length=7, default='#6C5CE7')
     cover_gradient_end = models.CharField(max_length=7, default='#4432B0')

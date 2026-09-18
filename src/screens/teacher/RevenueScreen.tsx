@@ -73,7 +73,7 @@ export const RevenueScreen: React.FC<Props> = ({ navigation }) => {
             style={[styles.paymentRow, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}
           >
             <View style={[styles.paymentIcon, { backgroundColor: theme.colors.secondarySoft }]}>
-              <Ionicons name="cash-outline" size={18} color={theme.colors.secondary} />
+              <Ionicons name="cash-outline" size={21} color={theme.colors.secondary} />
             </View>
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text numberOfLines={1} style={[styles.paymentCourse, { color: theme.colors.text }]}>{item.courseTitle}</Text>
@@ -91,22 +91,22 @@ export const RevenueScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 20 },
-  title: { fontSize: 19, fontWeight: '700', marginLeft: 4 },
-  summaryRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
-  summaryCard: { flex: 1, borderRadius: 16, padding: 16 },
-  summaryLabel: { fontSize: 11.5, fontWeight: '600', marginBottom: 8 },
-  summaryValue: { fontSize: 18, fontWeight: '700' },
-  chartCard: { borderRadius: 18, padding: 18, marginBottom: 24 },
-  chartTitle: { fontSize: 14, fontWeight: '700', marginBottom: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 22 },
+  title: { fontSize: 21, fontWeight: '700', marginLeft: 4 },
+  summaryRow: { flexDirection: 'row', gap: 12, marginBottom: 22 },
+  summaryCard: { flex: 1, borderRadius: 16, padding: 18 },
+  summaryLabel: { fontSize: 13, fontWeight: '600', marginBottom: 9 },
+  summaryValue: { fontSize: 20, fontWeight: '700' },
+  chartCard: { borderRadius: 18, padding: 18, marginBottom: 26 },
+  chartTitle: { fontSize: 15.5, fontWeight: '700', marginBottom: 17 },
   chartRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 110 },
   chartBarWrap: { alignItems: 'center', flex: 1 },
   chartBarTrack: { height: 80, width: 16, justifyContent: 'flex-end' },
-  chartLabel: { fontSize: 9.5, marginTop: 8, fontWeight: '700' },
-  sectionTitle: { fontSize: 15, fontWeight: '700', marginBottom: 12 },
-  paymentRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 14, marginBottom: 10 },
-  paymentIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  paymentCourse: { fontSize: 13, fontWeight: '700' },
-  paymentStudent: { fontSize: 11, marginTop: 3 },
-  paymentAmount: { fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  chartLabel: { fontSize: 11, marginTop: 8, fontWeight: '700' },
+  sectionTitle: { fontSize: 16.5, fontWeight: '700', marginBottom: 13 },
+  paymentRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, marginBottom: 10 },
+  paymentIcon: { width: 44, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  paymentCourse: { fontSize: 14.5, fontWeight: '700' },
+  paymentStudent: { fontSize: 12.5, marginTop: 3 },
+  paymentAmount: { fontSize: 15.5, fontWeight: '700', marginBottom: 4 },
 });

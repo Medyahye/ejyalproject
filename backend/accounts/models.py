@@ -38,8 +38,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     class GradeTrack(models.TextChoices):
         BAC_C = 'bac-c', 'Bac Série C'
         BAC_D = 'bac-d', 'Bac Série D'
-        BAC_A = 'bac-a', 'Bac Séries A / AB'
-        BAC_O = 'bac-o', 'Bac Série O'
+        BAC_LM = 'bac-lm', 'Bac Série LM'
+        BAC_LO = 'bac-lo', 'Bac Série LO'
+        BAC_T = 'bac-t', 'Bac Série T'
         BREVET = 'brevet', 'Brevet (BEPC)'
         CONCOURS = 'concours', 'Concours'
 

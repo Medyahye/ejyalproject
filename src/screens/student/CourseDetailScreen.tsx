@@ -82,7 +82,6 @@ export const CourseDetailScreen: React.FC = () => {
           <Animated.View entering={FadeInDown.delay(80).springify()}>
             <View style={styles.badgeRow}>
               <Badge label={course.categoryName} tone="primary" small />
-              <Badge label={course.level} tone="neutral" small />
               {course.isBestseller && <Badge label="Best-seller" tone="warning" small />}
             </View>
             <Text style={[styles.title, { color: theme.colors.text }]}>{course.title}</Text>
@@ -161,24 +160,33 @@ export const CourseDetailScreen: React.FC = () => {
                 {course.lessons.length} leçons · {formatDuration(course.durationHours)} au total
               </Text>
               {course.lessons.map((lesson, i) => (
-                <Pressable
-                  key={lesson.id}
-                  onPress={() => (owned || lesson.isPreview) && navigation.navigate('VideoPlayer', { courseId: course.id, lessonId: lesson.id })}
-                  style={[styles.lessonRow, { borderBottomColor: theme.colors.border }]}
-                >
-                  <View style={[styles.lessonIndex, { backgroundColor: theme.colors.primarySoft }]}>
-                    <Text style={{ color: theme.colors.primary, fontWeight: '700', fontSize: 12 }}>{i + 1}</Text>
-                  </View>
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={[styles.lessonTitle, { color: theme.colors.text }]}>{lesson.title}</Text>
-                    <Text style={[styles.lessonMeta, { color: theme.colors.textMuted }]}>{lesson.durationMinutes} min</Text>
-                  </View>
-                  {owned || lesson.isPreview ? (
-                    <Ionicons name="play-circle-outline" size={22} color={theme.colors.primary} />
-                  ) : (
-                    <Ionicons name="lock-closed-outline" size={18} color={theme.colors.textMuted} />
+                <View key={lesson.id} style={[styles.lessonRow, { borderBottomColor: theme.colors.border }]}>
+                  <Pressable
+                    onPress={() => (owned || lesson.isPreview) && navigation.navigate('VideoPlayer', { courseId: course.id, lessonId: lesson.id })}
+                    style={styles.lessonRowMain}
+                  >
+                    <View style={[styles.lessonIndex, { backgroundColor: theme.colors.primarySoft }]}>
+                      <Text style={{ color: theme.colors.primary, fontWeight: '700', fontSize: 12 }}>{i + 1}</Text>
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={[styles.lessonTitle, { color: theme.colors.text }]}>{lesson.title}</Text>
+                      <Text style={[styles.lessonMeta, { color: theme.colors.textMuted }]}>{lesson.durationMinutes} min</Text>
+                    </View>
+                    {owned || lesson.isPreview ? (
+                      <Ionicons name="play-circle-outline" size={22} color={theme.colors.primary} />
+                    ) : (
+                      <Ionicons name="lock-closed-outline" size={18} color={theme.colors.textMuted} />
+                    )}
+                  </Pressable>
+                  {lesson.pdfUri && (owned || lesson.isPreview) && (
+                    <Pressable style={[styles.lessonPdfBtn, { backgroundColor: theme.colors.dangerLight }]}>
+                      <Ionicons name="document-text-outline" size={14} color={theme.colors.danger} />
+                      <Text style={[styles.lessonPdfText, { color: theme.colors.danger }]} numberOfLines={1}>
+                        {lesson.pdfTitle || 'Support PDF'}
+                      </Text>
+                    </Pressable>
                   )}
-                </Pressable>
+                </View>
               ))}
             </Animated.View>
           )}
@@ -246,10 +254,13 @@ const styles = StyleSheet.create({
   pdfRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, marginTop: 12, marginBottom: 12 },
   pdfText: { flex: 1, marginLeft: 12, fontSize: 13.5, fontWeight: '700' },
   updatedText: { fontSize: 11.5, marginTop: 6 },
-  lessonRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1 },
+  lessonRow: { paddingVertical: 14, borderBottomWidth: 1 },
+  lessonRowMain: { flexDirection: 'row', alignItems: 'center' },
   lessonIndex: { width: 28, height: 28, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   lessonTitle: { fontSize: 13.5, fontWeight: '700' },
   lessonMeta: { fontSize: 11.5, marginTop: 3 },
+  lessonPdfBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', marginLeft: 40, marginTop: 8, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, maxWidth: '80%' },
+  lessonPdfText: { fontSize: 11, fontWeight: '700', marginLeft: 6 },
   ratingSummary: { alignItems: 'center', padding: 22, borderRadius: 16, marginBottom: 16 },
   ratingBig: { fontSize: 36, fontWeight: '700', marginBottom: 6 },
   ratingCountText: { fontSize: 12, marginTop: 6 },

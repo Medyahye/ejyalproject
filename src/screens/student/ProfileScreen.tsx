@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Alert, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
@@ -48,12 +48,19 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
     <ScrollView style={{ flex: 1, backgroundColor: theme.colors.background }} showsVerticalScrollIndicator={false}>
       <LinearGradient colors={theme.colors.gradientPrimary} style={styles.header}>
         <Animated.View entering={ZoomIn.delay(40).springify()}>
-          <Avatar uri={student?.avatar} size={84} ring />
+          <Avatar uri={student?.avatar} size={96} ring />
         </Animated.View>
         {isEditing ? (
-          <View style={{ width: '100%', marginTop: 16 }}>
-            <Input value={fullName} onChangeText={setFullName} placeholder="Nom complet" style={{ textAlign: 'center' }} />
-          </View>
+          <Animated.View entering={FadeInDown.delay(80).springify()} style={styles.nameEditWrap}>
+            <TextInput
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder="Nom complet"
+              placeholderTextColor="rgba(255,255,255,0.7)"
+              style={styles.nameEditInput}
+            />
+            <Text style={styles.email}>{student?.email}</Text>
+          </Animated.View>
         ) : (
           <Animated.View entering={FadeInDown.delay(120).springify()} style={{ alignItems: 'center' }}>
             <Text style={styles.name}>{student?.fullName}</Text>
@@ -67,13 +74,13 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           <View>
             <Input label="Bio" value={bio} onChangeText={setBio} placeholder="Parlez de vous..." multiline />
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
-              <Button label="Annuler" variant="outline" onPress={() => setIsEditing(false)} style={{ flex: 1 }} />
-              <Button label="Enregistrer" onPress={handleSave} style={{ flex: 1 }} />
+              <Button label="Annuler" variant="outline" size="lg" onPress={() => setIsEditing(false)} style={{ flex: 1 }} />
+              <Button label="Enregistrer" size="lg" onPress={handleSave} style={{ flex: 1 }} />
             </View>
           </View>
         ) : (
           <Animated.View entering={FadeInDown.delay(180).springify()}>
-            <Button label="Modifier le profil" variant="outline" icon="create-outline" onPress={() => setIsEditing(true)} style={{ marginBottom: 20 }} />
+            <Button label="Modifier le profil" variant="outline" size="lg" icon="create-outline" onPress={() => setIsEditing(true)} style={{ marginBottom: 22 }} />
           </Animated.View>
         )}
 
@@ -81,18 +88,18 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           <Animated.View key={item.label} entering={FadeInDown.delay(220 + i * 60).springify()}>
             <Pressable onPress={item.onPress} style={[styles.menuRow, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
               <View style={[styles.menuIcon, { backgroundColor: theme.colors.primarySoft }]}>
-                <Ionicons name={item.icon} size={19} color={theme.colors.primary} />
+                <Ionicons name={item.icon} size={22} color={theme.colors.primary} />
               </View>
-              <View style={{ flex: 1, marginLeft: 12 }}>
+              <View style={{ flex: 1, marginLeft: 14 }}>
                 <Text style={[styles.menuLabel, { color: theme.colors.text }]}>{item.label}</Text>
                 <Text style={[styles.menuSubtitle, { color: theme.colors.textMuted }]}>{item.subtitle}</Text>
               </View>
               {typeof item.count === 'number' && item.count > 0 && (
                 <View style={[styles.countBadge, { backgroundColor: theme.colors.primarySoft }]}>
-                  <Text style={{ color: theme.colors.primary, fontSize: 11, fontWeight: '700' }}>{item.count}</Text>
+                  <Text style={{ color: theme.colors.primary, fontSize: 12.5, fontWeight: '700' }}>{item.count}</Text>
                 </View>
               )}
-              <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+              <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
             </Pressable>
           </Animated.View>
         ))}
@@ -102,14 +109,14 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             onPress={() => setTrackSheetOpen(true)}
             style={[styles.menuRow, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}
           >
-            <View style={[styles.menuIcon, { backgroundColor: theme.colors.primarySoft }]}>
-              <Ionicons name={trackInfo?.icon ?? 'school-outline'} size={19} color={theme.colors.primary} />
+            <View style={[styles.menuIcon, { backgroundColor: trackInfo ? `${trackInfo.color}26` : theme.colors.primarySoft }]}>
+              <Ionicons name={trackInfo?.icon ?? 'school-outline'} size={22} color={trackInfo?.color ?? theme.colors.primary} />
             </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
+            <View style={{ flex: 1, marginLeft: 14 }}>
               <Text style={[styles.menuLabel, { color: theme.colors.text }]}>Ma filière</Text>
               <Text style={[styles.menuSubtitle, { color: theme.colors.textMuted }]}>{trackInfo ? trackInfo.label : 'Non définie'}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
           </Pressable>
         )}
 
@@ -120,9 +127,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         <Animated.View entering={FadeInDown.delay(440).springify()}>
           <View style={[styles.menuRow, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
             <View style={[styles.menuIcon, { backgroundColor: theme.colors.primarySoft }]}>
-              <Ionicons name="moon-outline" size={19} color={theme.colors.primary} />
+              <Ionicons name="moon-outline" size={22} color={theme.colors.primary} />
             </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
+            <View style={{ flex: 1, marginLeft: 14 }}>
               <Text style={[styles.menuLabel, { color: theme.colors.text }]}>Mode sombre</Text>
               <Text style={[styles.menuSubtitle, { color: theme.colors.textMuted }]}>Activer l'affichage sombre</Text>
             </View>
@@ -141,13 +148,13 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             style={[styles.menuRow, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}
           >
             <View style={[styles.menuIcon, { backgroundColor: theme.colors.primarySoft }]}>
-              <Ionicons name="settings-outline" size={19} color={theme.colors.primary} />
+              <Ionicons name="settings-outline" size={22} color={theme.colors.primary} />
             </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
+            <View style={{ flex: 1, marginLeft: 14 }}>
               <Text style={[styles.menuLabel, { color: theme.colors.text }]}>Tous les paramètres</Text>
               <Text style={[styles.menuSubtitle, { color: theme.colors.textMuted }]}>Notifications, téléchargements...</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
           </Pressable>
         </Animated.View>
 
@@ -157,22 +164,22 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             style={[styles.menuRow, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}
           >
             <View style={[styles.menuIcon, { backgroundColor: theme.colors.primarySoft }]}>
-              <Ionicons name="help-circle-outline" size={19} color={theme.colors.primary} />
+              <Ionicons name="help-circle-outline" size={22} color={theme.colors.primary} />
             </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
+            <View style={{ flex: 1, marginLeft: 14 }}>
               <Text style={[styles.menuLabel, { color: theme.colors.text }]}>Aide & Support</Text>
               <Text style={[styles.menuSubtitle, { color: theme.colors.textMuted }]}>Une question ? Contactez-nous</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
           </Pressable>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(560).springify()}>
           <Pressable onPress={logout} style={[styles.menuRow, { backgroundColor: theme.colors.card, ...theme.shadow('sm'), marginTop: 8 }]}>
             <View style={[styles.menuIcon, { backgroundColor: theme.colors.dangerLight }]}>
-              <Ionicons name="log-out-outline" size={19} color={theme.colors.danger} />
+              <Ionicons name="log-out-outline" size={22} color={theme.colors.danger} />
             </View>
-            <Text style={[styles.menuLabel, { color: theme.colors.danger, marginLeft: 12 }]}>Déconnexion</Text>
+            <Text style={[styles.menuLabel, { color: theme.colors.danger, marginLeft: 14 }]}>Déconnexion</Text>
           </Pressable>
         </Animated.View>
       </View>
@@ -191,14 +198,28 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  header: { alignItems: 'center', paddingTop: 70, paddingBottom: 28, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
-  name: { fontSize: 19, fontWeight: '700', color: '#fff', marginTop: 14 },
-  email: { fontSize: 12.5, color: 'rgba(255,255,255,0.85)', marginTop: 4 },
+  header: { alignItems: 'center', paddingTop: 76, paddingBottom: 32, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
+  name: { fontSize: 23, fontWeight: '700', color: '#fff', marginTop: 16 },
+  email: { fontSize: 14, color: 'rgba(255,255,255,0.85)', marginTop: 8 },
+  nameEditWrap: { alignItems: 'center', width: '100%', marginTop: 16, paddingHorizontal: 32 },
+  nameEditInput: {
+    width: '100%',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   content: { padding: 20 },
-  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginTop: 10, marginBottom: 10 },
-  menuRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, marginBottom: 10 },
-  menuIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  menuLabel: { fontSize: 13.5, fontWeight: '700' },
-  menuSubtitle: { fontSize: 11, marginTop: 2 },
-  countBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, marginRight: 8 },
+  sectionLabel: { fontSize: 12.5, fontWeight: '700', letterSpacing: 0.5, marginTop: 12, marginBottom: 12 },
+  menuRow: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, marginBottom: 12 },
+  menuIcon: { width: 44, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  menuLabel: { fontSize: 15.5, fontWeight: '700' },
+  menuSubtitle: { fontSize: 12.5, marginTop: 3 },
+  countBadge: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, marginRight: 10 },
 });

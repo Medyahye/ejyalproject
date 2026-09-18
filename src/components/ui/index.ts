@@ -14,3 +14,5 @@ export * from './AnimatedBar';
 export * from './SegmentedControl';
 export * from './AnimatedNumber';
 export * from './PinInput';
+export * from './PulsingDot';
+export * from './SwipeToDismiss';

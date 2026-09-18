@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
-import { AppUser, UserRole } from '../types';
+import { AppUser, GradeTrack, UserRole } from '../types';
 import { fetchMe, loginRequest, registerRequest, updateMe } from '../api/auth';
 import { clearAuthTokens, loadStoredTokens, setAuthFailureHandler } from '../api/client';
 
@@ -13,6 +13,9 @@ interface RegisterPayload {
   email: string;
   password: string;
   role: UserRole;
+  gradeTrack?: GradeTrack;
+  headline?: string;
+  teachingCategoryIds?: string[];
 }
 
 interface AuthContextValue {

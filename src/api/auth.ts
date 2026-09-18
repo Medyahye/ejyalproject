@@ -1,4 +1,4 @@
-import { AppUser, UserRole } from '../types';
+import { AppUser, GradeTrack, UserRole } from '../types';
 import { apiRequest, setAuthTokens } from './client';
 
 interface AuthResponse {
@@ -17,7 +17,15 @@ export async function loginRequest(email: string, password: string): Promise<App
   return data.user;
 }
 
-export async function registerRequest(payload: { fullName: string; email: string; password: string; role: UserRole }): Promise<AppUser> {
+export async function registerRequest(payload: {
+  fullName: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  gradeTrack?: GradeTrack;
+  headline?: string;
+  teachingCategoryIds?: string[];
+}): Promise<AppUser> {
   const data = await apiRequest<AuthResponse>('/auth/register/', {
     method: 'POST',
     auth: false,

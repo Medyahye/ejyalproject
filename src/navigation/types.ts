@@ -22,6 +22,8 @@ export type StudentTabParamList = {
 export type StudentStackParamList = {
   StudentTabs: NavigatorScreenParams<StudentTabParamList>;
   Search: undefined;
+  TrackSubjects: { track: string };
+  CategoryCourses: { track: string; categoryId: string; categoryName: string };
   CourseDetail: { courseId: string };
   VideoPlayer: { courseId: string; lessonId?: string };
   PdfLibrary: { courseId: string };

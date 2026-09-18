@@ -59,7 +59,7 @@ export const SettingsScreen: React.FC = () => {
         <Text style={[styles.rowLabel, { color: theme.colors.text }]}>Politique de confidentialité</Text>
         <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
       </Pressable>
-      <Text style={[styles.version, { color: theme.colors.textMuted }]}>EduConnect v1.0.0</Text>
+      <Text style={[styles.version, { color: theme.colors.textMuted }]}>Générations du Futur v1.0.0</Text>
     </ScreenContainer>
   );
 };

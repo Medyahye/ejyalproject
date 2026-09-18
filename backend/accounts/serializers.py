@@ -89,13 +89,22 @@ class UserSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     fullName = serializers.CharField(source='full_name')
     password = serializers.CharField(write_only=True, validators=[validate_password])
+    gradeTrack = serializers.CharField(source='grade_track', required=False, allow_blank=True)
+    headline = serializers.CharField(required=False, allow_blank=True)
+    teachingCategoryIds = serializers.PrimaryKeyRelatedField(
+        source='teaching_categories', many=True, queryset=Category.objects.all(), required=False,
+    )
 
     class Meta:
         model = User
-        fields = ['fullName', 'email', 'password', 'role']
+        fields = ['fullName', 'email', 'password', 'role', 'gradeTrack', 'headline', 'teachingCategoryIds']
 
     def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
+        teaching_categories = validated_data.pop('teaching_categories', None)
+        user = User.objects.create_user(**validated_data)
+        if teaching_categories:
+            user.teaching_categories.set(teaching_categories)
+        return user
 
 
 class UpdateProfileSerializer(serializers.ModelSerializer):

@@ -4,6 +4,18 @@ import { API_BASE_URL } from './config';
 const ACCESS_KEY = 'educonnect_access_token';
 const REFRESH_KEY = 'educonnect_refresh_token';
 
+function formatErrorMessage(data: unknown, status: number): string {
+  if (!data || typeof data !== 'object') return `Erreur ${status}`;
+  const obj = data as Record<string, unknown>;
+  if (typeof obj.detail === 'string') return obj.detail;
+  const messages: string[] = [];
+  for (const value of Object.values(obj)) {
+    if (Array.isArray(value)) messages.push(...value.map(String));
+    else if (typeof value === 'string') messages.push(value);
+  }
+  return messages.length > 0 ? messages.join('\n') : `Erreur ${status}`;
+}
+
 export class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -100,8 +112,7 @@ export async function apiRequest<T = unknown>(path: string, options: RequestOpti
   const data = isJson ? await res.json().catch(() => undefined) : undefined;
 
   if (!res.ok) {
-    const message = data?.detail || (typeof data === 'object' ? JSON.stringify(data) : `Erreur ${res.status}`);
-    throw new ApiError(res.status, message);
+    throw new ApiError(res.status, formatErrorMessage(data, res.status));
   }
 
   return data as T;
