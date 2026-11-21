@@ -10,7 +10,8 @@ import { useStudentData } from '../../context/StudentDataContext';
 import { Avatar, Input, Button } from '../../components/ui';
 import { GradeTrackSheet } from '../../components/student/GradeTrackSheet';
 import { Student, GradeTrack } from '../../types';
-import { getGradeTrackInfo } from '../../constants/gradeTracks';
+import { getLevelInfo } from '../../constants/levels';
+import { useCatalog } from '../../context/CatalogContext';
 import { FEATURES } from '../../constants/features';
 
 type Props = StudentTabScreenProps<'Profile'>;
@@ -24,7 +25,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [fullName, setFullName] = useState(student?.fullName ?? '');
   const [bio, setBio] = useState(student?.bio ?? '');
   const [trackSheetOpen, setTrackSheetOpen] = useState(false);
-  const trackInfo = FEATURES.gradeTrack ? getGradeTrackInfo(student?.gradeTrack) : undefined;
+  const { tracks, getTrack } = useCatalog();
+  const trackInfo = FEATURES.gradeTrack ? getTrack(student?.gradeTrack) : undefined;
+  const levelInfo = getLevelInfo(trackInfo?.level);
 
   const handleSelectTrack = (track: GradeTrack) => {
     updateProfile({ gradeTrack: track } as Partial<Student>);
@@ -92,7 +95,6 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               </View>
               <View style={{ flex: 1, marginLeft: 14 }}>
                 <Text style={[styles.menuLabel, { color: theme.colors.text }]}>{item.label}</Text>
-                <Text style={[styles.menuSubtitle, { color: theme.colors.textMuted }]}>{item.subtitle}</Text>
               </View>
               {typeof item.count === 'number' && item.count > 0 && (
                 <View style={[styles.countBadge, { backgroundColor: theme.colors.primarySoft }]}>
@@ -109,11 +111,11 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             onPress={() => setTrackSheetOpen(true)}
             style={[styles.menuRow, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}
           >
-            <View style={[styles.menuIcon, { backgroundColor: trackInfo ? `${trackInfo.color}26` : theme.colors.primarySoft }]}>
-              <Ionicons name={trackInfo?.icon ?? 'school-outline'} size={22} color={trackInfo?.color ?? theme.colors.primary} />
+            <View style={[styles.menuIcon, { backgroundColor: levelInfo ? `${levelInfo.gradient[0]}26` : theme.colors.primarySoft }]}>
+              <Ionicons name={levelInfo?.icon ?? 'school-outline'} size={22} color={levelInfo?.gradient[1] ?? theme.colors.primary} />
             </View>
             <View style={{ flex: 1, marginLeft: 14 }}>
-              <Text style={[styles.menuLabel, { color: theme.colors.text }]}>Ma filière</Text>
+              <Text style={[styles.menuLabel, { color: theme.colors.text }]}>Ma classe</Text>
               <Text style={[styles.menuSubtitle, { color: theme.colors.textMuted }]}>{trackInfo ? trackInfo.label : 'Non définie'}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
@@ -131,7 +133,6 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             </View>
             <View style={{ flex: 1, marginLeft: 14 }}>
               <Text style={[styles.menuLabel, { color: theme.colors.text }]}>Mode sombre</Text>
-              <Text style={[styles.menuSubtitle, { color: theme.colors.textMuted }]}>Activer l'affichage sombre</Text>
             </View>
             <Switch
               value={isDark}
@@ -152,7 +153,6 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             </View>
             <View style={{ flex: 1, marginLeft: 14 }}>
               <Text style={[styles.menuLabel, { color: theme.colors.text }]}>Tous les paramètres</Text>
-              <Text style={[styles.menuSubtitle, { color: theme.colors.textMuted }]}>Notifications, téléchargements...</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
           </Pressable>
@@ -168,7 +168,6 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             </View>
             <View style={{ flex: 1, marginLeft: 14 }}>
               <Text style={[styles.menuLabel, { color: theme.colors.text }]}>Aide & Support</Text>
-              <Text style={[styles.menuSubtitle, { color: theme.colors.textMuted }]}>Une question ? Contactez-nous</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
           </Pressable>
@@ -188,6 +187,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
     {FEATURES.gradeTrack && (
       <GradeTrackSheet
         visible={trackSheetOpen}
+        tracks={tracks}
         currentTrack={student?.gradeTrack}
         onSelect={handleSelectTrack}
         onClose={() => setTrackSheetOpen(false)}

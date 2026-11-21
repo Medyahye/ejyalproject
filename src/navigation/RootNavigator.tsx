@@ -5,6 +5,7 @@ import { useTheme } from '../theme';
 import { AuthNavigator } from './AuthNavigator';
 import { StudentStackNavigator } from './StudentStackNavigator';
 import { TeacherStackNavigator } from './TeacherStackNavigator';
+import { StaffNavigator } from './StaffNavigator';
 import { StudentDataProvider } from '../context/StudentDataContext';
 import { TeacherDataProvider } from '../context/TeacherDataContext';
 import { CatalogProvider } from '../context/CatalogContext';
@@ -33,7 +34,9 @@ export const RootNavigator: React.FC = () => {
       ) : (
         <CatalogProvider>
           <LiveProvider>
-            {user?.role === 'teacher' ? (
+            {user?.role === 'admin' || user?.role === 'director' ? (
+              <StaffNavigator />
+            ) : user?.role === 'teacher' ? (
               <TeacherDataProvider>
                 <TeacherStackNavigator />
               </TeacherDataProvider>

@@ -1,4 +1,4 @@
-export type UserRole = 'student' | 'teacher';
+export type UserRole = 'student' | 'teacher' | 'admin' | 'director';
 
 export interface BaseUser {
   id: string;
@@ -10,7 +10,38 @@ export interface BaseUser {
   createdAt: string;
 }
 
-export type GradeTrack = 'bac-c' | 'bac-d' | 'bac-lm' | 'bac-lo' | 'bac-t' | 'brevet' | 'concours';
+/** Slug of a class/filière (1af, brevet, bac-c…) — the list is managed by the director (see Track). */
+export type GradeTrack = string;
+
+export type SchoolLevel = 'primaire' | 'college' | 'lycee' | 'concours';
+
+export interface Track {
+  id: GradeTrack;
+  label: string;
+  shortLabel: string;
+  code: string;
+  level: SchoolLevel;
+  order: number;
+  mainCategoryIds: string[];
+}
+
+export interface SchoolTerm {
+  number: number;
+  label: string;
+  startDate: string;
+  endDate: string;
+  isCurrent: boolean;
+  isStarted: boolean;
+}
+
+export interface SchoolSettings {
+  whatsappNumber: string;
+  merchantNumbers: Record<string, string>;
+  defaultMaxViews: number;
+  teacherOfferMaxViews: number;
+}
+
+export type OfferType = 'single' | 'full' | 'main' | 'secondary' | 'teacher';
 
 export interface Student extends BaseUser {
   role: 'student';
@@ -18,6 +49,7 @@ export interface Student extends BaseUser {
   favoriteCourseIds: string[];
   purchasedCourseIds: string[];
   gradeTrack: GradeTrack | '';
+  favoriteTeacherIds: string[];
 }
 
 export interface Teacher extends BaseUser {
@@ -29,9 +61,33 @@ export interface Teacher extends BaseUser {
   rating: number;
   specialties: string[];
   teachingCategoryIds: string[];
+  revenueShare: number;
+  earnings: number;
+  packsClosed: boolean;
+  promoFreeUntil: string | null;
 }
 
-export type AppUser = Student | Teacher;
+export interface StaffUser extends BaseUser {
+  role: 'admin' | 'director';
+}
+
+export type AppUser = Student | Teacher | StaffUser;
+
+/** What a student sees of a teacher (fenêtre des professeurs). */
+export interface PublicTeacher {
+  id: string;
+  fullName: string;
+  avatar: string;
+  headline: string;
+  bio: string;
+  specialties: string[];
+  courseCount: number;
+  totalStudents: number;
+  rating: number;
+  teachingCategoryIds: string[];
+  promoFreeUntil: string | null;
+  isPromoActive: boolean;
+}
 
 export interface Category {
   id: string;
@@ -102,6 +158,15 @@ export interface Course {
   requirements: string[];
   isFeatured: boolean;
   isBestseller: boolean;
+  teacherHeadline?: string;
+  /** Trimestre 1, 2 ou 3 : le cours se débloque au début du trimestre. */
+  term: number;
+  contentType: 'video' | 'pdf' | 'both';
+  isClosed: boolean;
+  promoFreeUntil: string | null;
+  isFree: boolean;
+  isLocked: boolean;
+  unlockDate: string | null;
 }
 
 export interface Payment {
@@ -114,6 +179,8 @@ export interface Payment {
   date: string;
   method: 'Bankily' | 'Masrvi' | 'Sedad' | 'Click';
   status: 'Réussi' | 'En attente' | 'Échoué';
+  reference?: string;
+  offer?: OfferType;
 }
 
 export type LiveStatus = 'upcoming' | 'live' | 'ended';

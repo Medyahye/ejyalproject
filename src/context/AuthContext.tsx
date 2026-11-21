@@ -6,6 +6,8 @@ import { clearAuthTokens, loadStoredTokens, setAuthFailureHandler } from '../api
 const DEMO_CREDENTIALS: Record<UserRole, { email: string; password: string }> = {
   student: { email: 'mariem.abdellahi@gmail.com', password: 'password123' },
   teacher: { email: 'mohamed.sidiahmed@educonnect.mr', password: 'password123' },
+  admin: { email: 'admin@generations.mr', password: 'password123' },
+  director: { email: 'directeur@generations.mr', password: 'password123' },
 };
 
 interface RegisterPayload {

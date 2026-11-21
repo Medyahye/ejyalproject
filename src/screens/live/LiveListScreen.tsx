@@ -64,11 +64,6 @@ export const LiveListScreen: React.FC<Props> = ({ navigation }) => {
           </View>
           <Text style={[styles.rowDate, { color: theme.colors.textMuted }]}>{formatDateTime(item.scheduledAt)}</Text>
         </View>
-        {item.status === 'upcoming' ? (
-          <Badge label="À venir" tone="info" small />
-        ) : (
-          <Badge label="Terminé" tone="neutral" small />
-        )}
       </Pressable>
     </Animated.View>
   );
@@ -77,12 +72,11 @@ export const LiveListScreen: React.FC<Props> = ({ navigation }) => {
     <ScreenContainer scroll edges={['top']}>
       <Animated.View entering={FadeInDown.delay(20).springify()}>
         <Text style={[styles.title, { color: theme.colors.text }]}>Sessions Live</Text>
-        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>Échangez en direct avec vos formateurs</Text>
       </Animated.View>
 
       {live.length > 0 && (
         <View style={{ marginBottom: 26 }}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>🔴 En direct maintenant</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>En direct maintenant</Text>
           <FlatList
             horizontal
             data={live}

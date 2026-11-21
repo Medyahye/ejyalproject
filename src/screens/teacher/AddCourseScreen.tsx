@@ -10,7 +10,9 @@ import { useCatalog } from '../../context/CatalogContext';
 import { ScreenContainer } from '../../components/layout';
 import { Input, Button, IconButton, Chip, EmptyState } from '../../components/ui';
 import { GradeTrack, Teacher } from '../../types';
-import { GRADE_TRACKS } from '../../constants/gradeTracks';
+import { LEVELS, tracksForLevel } from '../../constants/levels';
+import { CONTENT_TYPE_INFO } from '../../constants/offers';
+import { Course } from '../../types';
 import { ApiError } from '../../api/client';
 import { createLesson } from '../../api/catalog';
 import { haptics } from '../../utils/haptics';
@@ -36,7 +38,9 @@ export const AddCourseScreen: React.FC = () => {
   const { user } = useAuth();
   const teacher = user as Teacher;
   const { addCourse, myCourses } = useTeacherData();
-  const { categories } = useCatalog();
+  const { categories, tracks, terms } = useCatalog();
+  const [term, setTerm] = useState(1);
+  const [contentType, setContentType] = useState<Course['contentType']>('both');
 
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
@@ -90,12 +94,12 @@ export const AddCourseScreen: React.FC = () => {
       return;
     }
     if (gradeTracks.length === 0) {
-      Alert.alert('Filière requise', 'Choisissez au moins une filière (C, D, LM, LO, T...) pour ce package.');
+      Alert.alert('Classe requise', 'Choisissez au moins une classe (primaire, collège, lycée…) pour ce package.');
       return;
     }
-    const validChapters = chapters.filter((c) => c.hasVideo);
+    const validChapters = chapters.filter((c) => c.hasVideo || c.hasPdf);
     if (validChapters.length === 0) {
-      Alert.alert('Chapitre requis', 'Ajoutez au moins un chapitre avec sa vidéo avant de publier.');
+      Alert.alert('Chapitre requis', 'Ajoutez au moins un chapitre avec sa vidéo ou son PDF avant de publier.');
       return;
     }
     setSubmitting(true);
@@ -111,6 +115,8 @@ export const AddCourseScreen: React.FC = () => {
         level: 'Débutant',
         thumbnail: '',
         gradeTracks,
+        term,
+        contentType,
       });
 
       await Promise.all(
@@ -128,7 +134,7 @@ export const AddCourseScreen: React.FC = () => {
         )
       );
 
-      Alert.alert('Package créé 🎉', 'Votre package a été publié avec succès.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+      Alert.alert('Package créé', 'Votre package a été publié avec succès.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
     } catch (err) {
       Alert.alert('Publication impossible', err instanceof ApiError ? err.message : 'Une erreur est survenue.');
     } finally {
@@ -187,27 +193,76 @@ export const AddCourseScreen: React.FC = () => {
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(220).springify()}>
-        <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>Filière(s) visée(s)</Text>
-        <Text style={[styles.sectionHint, { color: theme.colors.textMuted }]}>Pour qui est fait ce package ? (plusieurs choix possibles)</Text>
-        <View style={styles.trackWrap}>
-          {GRADE_TRACKS.map((track) => {
-            const selected = gradeTracks.includes(track.id);
+        <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>Trimestre</Text>
+        <Text style={[styles.sectionHint, { color: theme.colors.textMuted }]}>Le cours se débloque pour les élèves au début de ce trimestre</Text>
+        <View style={[styles.trackWrap, { marginBottom: 18 }]}>
+          {(terms.length ? terms.map((t) => ({ n: t.number, label: t.label })) : [1, 2, 3].map((n) => ({ n, label: `Trimestre ${n}` }))).map((t) => {
+            const selected = term === t.n;
             return (
               <Pressable
-                key={track.id}
-                onPress={() => toggleTrack(track.id)}
-                style={[
-                  styles.trackChip,
-                  { backgroundColor: selected ? track.color : theme.colors.card, borderColor: selected ? track.color : theme.colors.border },
-                ]}
+                key={t.n}
+                onPress={() => {
+                  haptics.select();
+                  setTerm(t.n);
+                }}
+                style={[styles.trackChip, { backgroundColor: selected ? theme.colors.primary : theme.colors.card, borderColor: selected ? theme.colors.primary : theme.colors.border }]}
               >
-                <Text style={[styles.trackChipCode, { color: selected ? '#fff' : theme.colors.text }]}>{track.code}</Text>
-                <Text style={[styles.trackChipLabel, { color: selected ? '#fff' : theme.colors.textMuted }]}>{track.shortLabel}</Text>
-                {selected && <Ionicons name="checkmark-circle" size={16} color="#fff" style={{ marginLeft: 6 }} />}
+                <Text style={[styles.trackChipCode, { color: selected ? '#fff' : theme.colors.text }]}>T{t.n}</Text>
+                <Text style={[styles.trackChipLabel, { color: selected ? '#fff' : theme.colors.textMuted }]}>{t.label}</Text>
               </Pressable>
             );
           })}
         </View>
+
+        <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>Type de contenu</Text>
+        <View style={[styles.trackWrap, { marginBottom: 18 }]}>
+          {(Object.keys(CONTENT_TYPE_INFO) as Course['contentType'][]).map((ct) => {
+            const selected = contentType === ct;
+            return (
+              <Pressable
+                key={ct}
+                onPress={() => {
+                  haptics.select();
+                  setContentType(ct);
+                }}
+                style={[styles.trackChip, { backgroundColor: selected ? theme.colors.primary : theme.colors.card, borderColor: selected ? theme.colors.primary : theme.colors.border }]}
+              >
+                <Ionicons name={CONTENT_TYPE_INFO[ct].icon} size={16} color={selected ? '#fff' : theme.colors.textSecondary} style={{ marginRight: 6 }} />
+                <Text style={[styles.trackChipCode, { color: selected ? '#fff' : theme.colors.text, fontSize: 13 }]}>{CONTENT_TYPE_INFO[ct].label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>Classe(s) visée(s)</Text>
+        <Text style={[styles.sectionHint, { color: theme.colors.textMuted }]}>Pour qui est fait ce package ? (plusieurs choix possibles)</Text>
+        {LEVELS.map((level) => {
+          const levelTracks = tracksForLevel(tracks, level.id);
+          if (levelTracks.length === 0) return null;
+          return (
+            <View key={level.id} style={{ marginBottom: 10 }}>
+              <Text style={[styles.sectionHint, { color: level.gradient[1], fontWeight: '800', marginBottom: 6 }]}>{level.label}</Text>
+              <View style={styles.trackWrap}>
+                {levelTracks.map((track) => {
+                  const selected = gradeTracks.includes(track.id);
+                  return (
+                    <Pressable
+                      key={track.id}
+                      onPress={() => toggleTrack(track.id)}
+                      style={[
+                        styles.trackChip,
+                        { backgroundColor: selected ? level.gradient[1] : theme.colors.card, borderColor: selected ? level.gradient[1] : theme.colors.border },
+                      ]}
+                    >
+                      <Text style={[styles.trackChipCode, { color: selected ? '#fff' : theme.colors.text }]}>{track.code}</Text>
+                      {selected && <Ionicons name="checkmark-circle" size={16} color="#fff" style={{ marginLeft: 6 }} />}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          );
+        })}
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(280).springify()}>

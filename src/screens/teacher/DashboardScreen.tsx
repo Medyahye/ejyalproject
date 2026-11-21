@@ -32,7 +32,11 @@ export const DashboardScreen: React.FC<Props> = ({ navigation }) => {
     setSubjectsSheetOpen(false);
   };
 
-  const totalRevenue = payments.filter((p) => p.status === 'Réussi').reduce((sum, p) => sum + p.amount, 0);
+  const totalRevenue = payments.filter((p) => p.status === 'Réussi').reduce((sum, p) => sum + Number(p.amount), 0);
+  const share = Number(teacher?.revenueShare ?? 0);
+  const earnings = Math.round((totalRevenue * share) / 100);
+  const maxSubscribers = Math.max(...myCourses.map((c) => c.studentsCount), 1);
+  const bySubscribers = [...myCourses].sort((a, b) => b.studentsCount - a.studentsCount);
   const totalStudents = myCourses.reduce((sum, c) => sum + c.studentsCount, 0);
   const avgRating = myCourses.length ? myCourses.reduce((sum, c) => sum + c.rating, 0) / myCourses.length : 0;
   const maxRevenue = Math.max(...monthlyRevenue.map((m) => m.amount), 1);
@@ -110,6 +114,65 @@ export const DashboardScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.revenueTrend}>+12,5% par rapport au mois dernier</Text>
           </View>
         </LinearGradient>
+      </Animated.View>
+
+      {teacher?.packsClosed && (
+        <Animated.View entering={FadeInDown.delay(90).springify()} style={[styles.closedBanner, { backgroundColor: theme.colors.dangerLight }]}>
+          <Ionicons name="alert-circle" size={20} color={theme.colors.danger} />
+          <Text style={[styles.closedText, { color: theme.colors.danger }]}>
+            Vos packs sont temporairement fermés par l'administration. Contactez le directeur.
+          </Text>
+        </Animated.View>
+      )}
+
+      <Animated.View entering={FadeInDown.delay(100).springify()} style={[styles.dealCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+        <View style={styles.dealTop}>
+          <View style={[styles.dealRing, { borderColor: theme.colors.primary }]}>
+            <Text style={[styles.dealPct, { color: theme.colors.primary }]}>{Math.round(share)}%</Text>
+          </View>
+          <View style={{ flex: 1, marginLeft: 14 }}>
+            <Text style={[styles.dealTitle, { color: theme.colors.text }]}>Votre accord avec le directeur</Text>
+            <Text style={[styles.dealSub, { color: theme.colors.textMuted }]}>Vous touchez {Math.round(share)}% de chaque vente</Text>
+          </View>
+        </View>
+        <View style={styles.dealRow}>
+          <View style={styles.dealCell}>
+            <Text style={[styles.dealLabel, { color: theme.colors.textMuted }]}>Ventes totales</Text>
+            <Text style={[styles.dealValue, { color: theme.colors.text }]}>{formatPrice(totalRevenue)}</Text>
+          </View>
+          <View style={styles.dealCell}>
+            <Text style={[styles.dealLabel, { color: theme.colors.textMuted }]}>Votre part</Text>
+            <Text style={[styles.dealValue, { color: theme.colors.primary }]}>{formatPrice(earnings)}</Text>
+          </View>
+          <View style={styles.dealCell}>
+            <Text style={[styles.dealLabel, { color: theme.colors.textMuted }]}>Abonnés</Text>
+            <Text style={[styles.dealValue, { color: theme.colors.text }]}>{teacher?.totalStudents ?? totalStudents}</Text>
+          </View>
+        </View>
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(120).springify()} style={[styles.dealCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+        <Text style={[styles.dealTitle, { color: theme.colors.text, marginBottom: 12 }]}>Abonnés par cours</Text>
+        {bySubscribers.length === 0 ? (
+          <Text style={[styles.dealSub, { color: theme.colors.textMuted }]}>Publiez votre premier pack pour voir vos abonnés.</Text>
+        ) : (
+          bySubscribers.map((c) => (
+            <Pressable key={c.id} onPress={() => navigation.navigate('EditCourse', { courseId: c.id })} style={styles.subRow}>
+              <View style={{ flex: 1 }}>
+                <View style={styles.subLabelRow}>
+                  <Text numberOfLines={1} style={[styles.subTitle, { color: theme.colors.text }]}>{c.title}</Text>
+                  <Text style={[styles.subCount, { color: theme.colors.text }]}>{c.studentsCount}</Text>
+                </View>
+                <View style={[styles.subTrack, { backgroundColor: theme.colors.backgroundAlt }]}>
+                  <View style={[styles.subFill, { width: `${(c.studentsCount / maxSubscribers) * 100}%`, backgroundColor: c.isClosed ? theme.colors.danger : theme.colors.primary }]} />
+                </View>
+                <Text style={[styles.subMeta, { color: theme.colors.textMuted }]}>
+                  T{c.term} · {c.isClosed ? 'Fermé' : c.isLocked ? 'Verrouillé jusqu\'au trimestre' : 'En ligne'}{c.isFree ? ' · Offert' : ''}
+                </Text>
+              </View>
+            </Pressable>
+          ))
+        )}
       </Animated.View>
 
       <View style={styles.statsGrid}>
@@ -196,4 +259,23 @@ const styles = StyleSheet.create({
   chartBarWrap: { alignItems: 'center', flex: 1 },
   chartBarTrack: { height: 90, width: 18, justifyContent: 'flex-end' },
   chartLabel: { fontSize: 11.5, marginTop: 8, fontWeight: '700' },
+  closedBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 16, padding: 14, marginBottom: 16 },
+  closedText: { flex: 1, fontSize: 13, fontWeight: '700', lineHeight: 18 },
+  dealCard: { borderRadius: 20, padding: 16, marginBottom: 16 },
+  dealTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  dealRing: { width: 62, height: 62, borderRadius: 31, borderWidth: 5, alignItems: 'center', justifyContent: 'center' },
+  dealPct: { fontSize: 17, fontWeight: '900' },
+  dealTitle: { fontSize: 15.5, fontWeight: '800' },
+  dealSub: { fontSize: 12.5, marginTop: 2 },
+  dealRow: { flexDirection: 'row', gap: 8 },
+  dealCell: { flex: 1 },
+  dealLabel: { fontSize: 11.5, fontWeight: '600' },
+  dealValue: { fontSize: 15, fontWeight: '800', marginTop: 2 },
+  subRow: { marginBottom: 14 },
+  subLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  subTitle: { flex: 1, fontSize: 13, fontWeight: '700', marginRight: 10 },
+  subCount: { fontSize: 13, fontWeight: '800' },
+  subTrack: { height: 8, borderRadius: 4, overflow: 'hidden' },
+  subFill: { height: 8, borderRadius: 4 },
+  subMeta: { fontSize: 11, marginTop: 4, fontWeight: '600' },
 });

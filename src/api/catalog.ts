@@ -1,4 +1,4 @@
-import { Category, Course, CourseLevel, CoursePdf, GradeTrack, Lesson, Review } from '../types';
+import { Category, Course, CourseLevel, CoursePdf, GradeTrack, Lesson, PublicTeacher, Review, SchoolSettings, SchoolTerm, Track } from '../types';
 import { apiRequest } from './client';
 
 export function fetchCourses(): Promise<Course[]> {
@@ -7,6 +7,22 @@ export function fetchCourses(): Promise<Course[]> {
 
 export function fetchCategories(): Promise<Category[]> {
   return apiRequest<Category[]>('/categories/');
+}
+
+export function fetchTracks(): Promise<Track[]> {
+  return apiRequest<Track[]>('/tracks/', { auth: false });
+}
+
+export function fetchTerms(): Promise<SchoolTerm[]> {
+  return apiRequest<SchoolTerm[]>('/terms/', { auth: false });
+}
+
+export function fetchTeachers(): Promise<PublicTeacher[]> {
+  return apiRequest<PublicTeacher[]>('/teachers/');
+}
+
+export function fetchSettings(): Promise<SchoolSettings> {
+  return apiRequest<SchoolSettings>('/settings/', { auth: false });
 }
 
 export function fetchCourseReviews(courseId: string): Promise<Review[]> {
@@ -27,6 +43,8 @@ export interface NewCoursePayload {
   thumbnail: string;
   coverGradient?: readonly [string, string];
   gradeTracks?: GradeTrack[];
+  term?: number;
+  contentType?: Course['contentType'];
 }
 
 export function createCourse(payload: NewCoursePayload): Promise<Course> {
@@ -68,4 +86,12 @@ export interface NewCoursePdfPayload {
 
 export function createCoursePdf(courseId: string, payload: NewCoursePdfPayload): Promise<CoursePdf> {
   return apiRequest<CoursePdf>(`/courses/${courseId}/pdfs/`, { method: 'POST', body: payload });
+}
+
+export function updateLesson(lessonId: string, updates: Partial<NewLessonPayload>): Promise<Lesson> {
+  return apiRequest<Lesson>(`/lessons/${lessonId}/`, { method: 'PATCH', body: updates });
+}
+
+export function deleteLesson(lessonId: string): Promise<void> {
+  return apiRequest<void>(`/lessons/${lessonId}/`, { method: 'DELETE' });
 }

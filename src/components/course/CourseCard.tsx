@@ -3,9 +3,8 @@ import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
 import { Course } from '../../types';
-import { Badge } from '../ui/Badge';
-import { RatingStars } from '../ui/RatingStars';
-import { formatPrice } from '../../utils/formatters';
+import { formatPrice, formatDateShort } from '../../utils/formatters';
+import { Tag } from '../ui/Tag';
 
 interface CourseCardProps {
   course: Course;
@@ -15,7 +14,8 @@ interface CourseCardProps {
   width?: number;
 }
 
-export const CourseCard: React.FC<CourseCardProps> = ({ course, onPress, onToggleFavorite, isFavorite, width = 190 }) => {
+/** Pack card: cover, title, teacher and price — only what helps choosing. */
+export const CourseCard: React.FC<CourseCardProps> = ({ course, onPress, onToggleFavorite, isFavorite, width = 260 }) => {
   const { theme } = useTheme();
 
   return (
@@ -26,38 +26,38 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course, onPress, onToggl
         {
           width,
           backgroundColor: theme.colors.card,
-          opacity: pressed ? 0.95 : 1,
-          transform: [{ scale: pressed ? 0.98 : 1 }],
+          transform: [{ scale: pressed ? 0.975 : 1 }],
           ...theme.shadow('sm'),
         },
       ]}
     >
       <View>
         <Image source={{ uri: course.thumbnail }} style={styles.image} />
-        {(course.isBestseller || course.isFeatured) && (
-          <View style={styles.badgeOverlay}>
-            <Badge label={course.isBestseller ? 'Best-seller' : 'À la une'} tone={course.isBestseller ? 'warning' : 'primary'} small />
+        <View style={styles.topRow}>
+          <View style={styles.pillRow}>
+            {course.isFree && <Tag label="Offert" tone="light" />}
+            {course.isLocked && course.unlockDate && (
+              <View style={[styles.pill, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>
+                <Ionicons name="lock-closed" size={11} color="#fff" />
+                <Text style={styles.pillText}>{formatDateShort(course.unlockDate)}</Text>
+              </View>
+            )}
           </View>
-        )}
-        {onToggleFavorite && (
-          <Pressable onPress={onToggleFavorite} hitSlop={8} style={styles.favBtn}>
-            <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={16} color={isFavorite ? theme.colors.danger : '#fff'} />
-          </Pressable>
-        )}
+          {onToggleFavorite && (
+            <Pressable onPress={onToggleFavorite} hitSlop={8} style={styles.favBtn}>
+              <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={17} color={isFavorite ? theme.colors.danger : '#fff'} />
+            </Pressable>
+          )}
+        </View>
       </View>
       <View style={styles.body}>
-        <Text numberOfLines={1} style={[styles.category, { color: theme.colors.primary }]}>
-          {course.categoryName}
-        </Text>
-        <Text numberOfLines={2} style={[styles.title, { color: theme.colors.text }]}>
-          {course.title}
-        </Text>
-        <RatingStars rating={course.rating} size={11} showValue={false} count={course.ratingCount} />
+        <Text numberOfLines={2} style={[styles.title, { color: theme.colors.text }]}>{course.title}</Text>
         <View style={styles.footerRow}>
-          <Text style={[styles.price, { color: theme.colors.text }]}>{formatPrice(course.price)}</Text>
-          {course.originalPrice && (
-            <Text style={[styles.oldPrice, { color: theme.colors.textMuted }]}>{formatPrice(course.originalPrice)}</Text>
-          )}
+          <Image source={{ uri: course.teacherAvatar }} style={styles.teacherDot} />
+          <Text numberOfLines={1} style={[styles.teacher, { color: theme.colors.textSecondary }]}>{course.teacherName}</Text>
+          <Text style={[styles.price, { color: course.isFree ? theme.colors.primary : theme.colors.text }]}>
+            {course.isFree ? 'Offert' : formatPrice(course.price)}
+          </Text>
         </View>
       </View>
     </Pressable>
@@ -65,24 +65,19 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course, onPress, onToggl
 };
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 18, overflow: 'hidden', marginRight: 14 },
-  image: { width: '100%', height: 104 },
-  badgeOverlay: { position: 'absolute', top: 8, left: 8 },
-  favBtn: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  body: { padding: 10 },
-  category: { fontSize: 10.5, fontWeight: '700', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.3 },
-  title: { fontSize: 13, fontWeight: '700', lineHeight: 17, marginBottom: 6, minHeight: 34 },
-  footerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  price: { fontSize: 14, fontWeight: '700', marginRight: 6 },
-  oldPrice: { fontSize: 11, textDecorationLine: 'line-through' },
+  card: { borderRadius: 22, overflow: 'hidden', marginRight: 14 },
+  image: { width: '100%', height: 150 },
+  topRow: { position: 'absolute', top: 10, left: 10, right: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  pillRow: { flexDirection: 'row', gap: 6 },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
+  pillText: { color: '#fff', fontSize: 10.5, fontWeight: '800', letterSpacing: 0.3 },
+  bottomOverlay: { position: 'absolute', left: 10, bottom: 10, flexDirection: 'row', gap: 6 },
+  favBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' },
+  teacherDot: { width: 22, height: 22, borderRadius: 11, marginRight: 6 },
+  body: { padding: 14, paddingTop: 12 },
+  title: { fontSize: 15, fontWeight: '800', lineHeight: 20, minHeight: 40 },
+  teacher: { flex: 1, fontSize: 12.5 },
+  footerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
+  price: { fontSize: 15.5, fontWeight: '800' },
+  oldPrice: { fontSize: 11.5, textDecorationLine: 'line-through' },
 });

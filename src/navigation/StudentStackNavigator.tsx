@@ -13,6 +13,10 @@ import { CartScreen } from '../screens/student/CartScreen';
 import { PaymentScreen } from '../screens/student/PaymentScreen';
 import { SettingsScreen } from '../screens/student/SettingsScreen';
 import { LiveRoomScreen } from '../screens/live/LiveRoomScreen';
+import { TeachersScreen } from '../screens/student/TeachersScreen';
+import { TeacherPublicProfileScreen } from '../screens/student/TeacherPublicProfileScreen';
+import { OfferScreen } from '../screens/student/OfferScreen';
+import { PdfViewerScreen } from '../screens/student/PdfViewerScreen';
 
 const Stack = createNativeStackNavigator<StudentStackParamList>();
 
@@ -31,6 +35,10 @@ export const StudentStackNavigator: React.FC = () => {
       <Stack.Screen name="Payment" component={PaymentScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="LiveRoom" component={LiveRoomScreen} options={{ animation: 'fade' }} />
+      <Stack.Screen name="Teachers" component={TeachersScreen} />
+      <Stack.Screen name="TeacherProfile" component={TeacherPublicProfileScreen} />
+      <Stack.Screen name="Offer" component={OfferScreen} options={{ animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="PdfViewer" component={PdfViewerScreen} />
     </Stack.Navigator>
   );
 };

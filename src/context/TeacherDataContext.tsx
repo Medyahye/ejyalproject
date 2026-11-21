@@ -16,6 +16,8 @@ interface NewCoursePayload {
   level: Course['level'];
   thumbnail: string;
   gradeTracks: GradeTrack[];
+  term: number;
+  contentType: Course['contentType'];
 }
 
 interface TeacherDataContextValue {
@@ -64,6 +66,8 @@ export const TeacherDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
         thumbnail: payload.thumbnail || `https://picsum.photos/seed/${Date.now()}/600/400`,
         coverGradient: GRADIENTS[Math.floor(Math.random() * GRADIENTS.length)],
         gradeTracks: payload.gradeTracks,
+        term: payload.term,
+        contentType: payload.contentType,
       });
       await refreshCatalog();
       return created;

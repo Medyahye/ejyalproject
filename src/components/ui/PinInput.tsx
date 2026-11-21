@@ -11,7 +11,7 @@ interface PinInputProps {
 
 export const PinInput: React.FC<PinInputProps> = ({ length = 4, value, onChangeText, secure = true }) => {
   const { theme } = useTheme();
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
   const [focused, setFocused] = useState(false);
 
   return (

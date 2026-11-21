@@ -1,4 +1,4 @@
-import { CartItem, Course, Payment } from '../types';
+import { CartItem, Course, OfferType, Payment } from '../types';
 import { apiRequest } from './client';
 
 export interface FavoriteEntry {
@@ -37,10 +37,49 @@ export interface EnrollmentEntry {
   course: Course;
   progress: number;
   purchasedAt: string;
+  status: 'pending' | 'active';
+  offer: OfferType;
+  maxViews: number;
+  /** lessonId → number of times the student already watched it */
+  lessonViews: Record<string, number>;
 }
 
-export function checkoutCartRequest(method: Payment['method']): Promise<EnrollmentEntry[]> {
-  return apiRequest<EnrollmentEntry[]>('/cart/checkout/', { method: 'POST', body: { method } });
+export interface OrderResult {
+  reference: string;
+  offer: OfferType;
+  method: Payment['method'];
+  amount: number;
+  status: 'pending' | 'active';
+  whatsappNumber: string;
+  grantedCourseIds: string[];
+  pendingCourseIds: string[];
+}
+
+/** Without courseIds the cart is ordered; with courseIds (a pack offer) only those courses. */
+export function checkoutRequest(method: Payment['method'], offer: OfferType = 'single', courseIds?: string[]): Promise<OrderResult> {
+  return apiRequest<OrderResult>('/cart/checkout/', { method: 'POST', body: { method, offer, courseIds } });
+}
+
+export interface LessonViewResult {
+  viewsUsed: number;
+  maxViews: number | null;
+  remaining: number | null;
+}
+
+export function recordLessonView(lessonId: string): Promise<LessonViewResult> {
+  return apiRequest<LessonViewResult>(`/lessons/${lessonId}/view/`, { method: 'POST' });
+}
+
+export function fetchFavoriteTeachers(): Promise<Array<{ id: string; teacherId: string }>> {
+  return apiRequest('/favorite-teachers/');
+}
+
+export function addFavoriteTeacherRequest(teacherId: string): Promise<unknown> {
+  return apiRequest('/favorite-teachers/', { method: 'POST', body: { teacherId } });
+}
+
+export function removeFavoriteTeacherRequest(teacherId: string): Promise<void> {
+  return apiRequest<void>(`/favorite-teachers/by-teacher/${teacherId}/`, { method: 'DELETE' });
 }
 
 export function fetchEnrollments(): Promise<EnrollmentEntry[]> {

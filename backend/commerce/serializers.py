@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from catalog.serializers import CourseSerializer
 
-from .models import CartItem, Enrollment, Favorite, Payment
+from .models import CartItem, Enrollment, Favorite, FavoriteTeacher, LessonView, Payment
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -40,11 +40,25 @@ class EnrollmentSerializer(serializers.ModelSerializer):
     course = CourseSerializer(read_only=True)
     courseId = serializers.PrimaryKeyRelatedField(source='course', read_only=True)
     purchasedAt = serializers.DateTimeField(source='purchased_at', read_only=True)
+    maxViews = serializers.IntegerField(source='max_views', read_only=True)
+    lessonViews = serializers.SerializerMethodField()
 
     class Meta:
         model = Enrollment
-        fields = ['id', 'courseId', 'course', 'progress', 'purchasedAt']
-        read_only_fields = ['id', 'courseId', 'course', 'purchasedAt']
+        fields = ['id', 'courseId', 'course', 'progress', 'purchasedAt', 'status', 'offer', 'maxViews', 'lessonViews']
+        read_only_fields = ['id', 'courseId', 'course', 'purchasedAt', 'status', 'offer']
+
+    def get_lessonViews(self, obj):
+        views = LessonView.objects.filter(student_id=obj.student_id, lesson__course_id=obj.course_id)
+        return {str(v.lesson_id): v.count for v in views}
+
+
+class FavoriteTeacherSerializer(serializers.ModelSerializer):
+    teacherId = serializers.PrimaryKeyRelatedField(source='teacher', read_only=True)
+
+    class Meta:
+        model = FavoriteTeacher
+        fields = ['id', 'teacherId', 'created_at']
 
 
 class PaymentSerializer(serializers.ModelSerializer):
@@ -55,5 +69,5 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Payment
-        fields = ['id', 'courseId', 'courseTitle', 'studentId', 'studentName', 'amount', 'date', 'method', 'status']
+        fields = ['id', 'courseId', 'courseTitle', 'studentId', 'studentName', 'amount', 'date', 'method', 'status', 'reference', 'offer']
         read_only_fields = fields

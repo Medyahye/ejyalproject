@@ -32,17 +32,10 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     class Role(models.TextChoices):
-        STUDENT = 'student', 'Student'
-        TEACHER = 'teacher', 'Teacher'
-
-    class GradeTrack(models.TextChoices):
-        BAC_C = 'bac-c', 'Bac Série C'
-        BAC_D = 'bac-d', 'Bac Série D'
-        BAC_LM = 'bac-lm', 'Bac Série LM'
-        BAC_LO = 'bac-lo', 'Bac Série LO'
-        BAC_T = 'bac-t', 'Bac Série T'
-        BREVET = 'brevet', 'Brevet (BEPC)'
-        CONCOURS = 'concours', 'Concours'
+        STUDENT = 'student', 'Étudiant'
+        TEACHER = 'teacher', 'Professeur'
+        ADMIN = 'admin', 'Administrateur'
+        DIRECTOR = 'director', 'Directeur général'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
@@ -51,8 +44,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(max_length=10, choices=Role.choices)
     bio = models.TextField(blank=True, default='')
 
-    # Student-only field
-    grade_track = models.CharField(max_length=10, choices=GradeTrack.choices, blank=True, default='')
+    # Student-only field — slug of a catalog.Track (filières are managed by the director).
+    grade_track = models.CharField(max_length=20, blank=True, default='')
 
     # Teacher-only fields (unused for students)
     headline = models.CharField(max_length=255, blank=True, default='')
@@ -60,6 +53,18 @@ class User(AbstractBaseUser, PermissionsMixin):
     teaching_categories = models.ManyToManyField(
         'catalog.Category', blank=True, related_name='teachers',
         help_text='Matières enseignées par ce professeur — personnalise les catégories proposées lors de la création de cours.',
+    )
+
+    # Teacher-only business terms, set by the director/admins.
+    revenue_share = models.DecimalField(
+        max_digits=5, decimal_places=2, default=50,
+        help_text="Pourcentage des ventes reversé au professeur (accord avec le directeur).",
+    )
+    packs_closed = models.BooleanField(
+        default=False, help_text='Fermé par un administrateur (désaccord) : ses packs ne sont plus visibles ni achetables.',
+    )
+    promo_free_until = models.DateField(
+        null=True, blank=True, help_text="Tous les cours de ce professeur sont gratuits jusqu'à cette date.",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -84,3 +89,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_student(self):
         return self.role == self.Role.STUDENT
+
+    @property
+    def is_director(self):
+        return self.role == self.Role.DIRECTOR
+
+    @property
+    def is_staff_member(self):
+        """Admins and the director can see and manage everything."""
+        return self.role in (self.Role.ADMIN, self.Role.DIRECTOR)

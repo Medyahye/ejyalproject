@@ -9,4 +9,4 @@
  *     `cloudflared tunnel --url http://localhost:8001` and use the printed
  *     https://*.trycloudflare.com URL. Note it changes every restart.
  */
-export const API_BASE_URL = 'http://localhost:8001/api';
+export const API_BASE_URL = 'http://192.168.100.104:8001/api';

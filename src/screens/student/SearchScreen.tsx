@@ -70,7 +70,7 @@ export const SearchScreen: React.FC<Props> = ({ navigation }) => {
             <CourseListItem course={item} onPress={() => navigation.navigate('CourseDetail', { courseId: item.id })} />
           )}
           ListEmptyComponent={
-            <EmptyState icon="sad-outline" title="Aucun résultat" description="Essayez avec d'autres mots-clés." />
+            <EmptyState icon="sad-outline" title="Aucun résultat" />
           }
         />
       )}

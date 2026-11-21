@@ -1,20 +1,26 @@
-import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, Pressable, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, Image, StyleSheet, Pressable, Alert, ScrollView, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import * as Clipboard from 'expo-clipboard';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import Animated, { FadeIn, FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
+import { useAuth } from '../../context/AuthContext';
 import { useStudentData } from '../../context/StudentDataContext';
+import { useCatalog } from '../../context/CatalogContext';
 import { ScreenContainer } from '../../components/layout';
-import { Button, IconButton, Input, PinInput } from '../../components/ui';
+import { Button, IconButton } from '../../components/ui';
 import { formatPrice } from '../../utils/formatters';
 import { StudentStackParamList } from '../../navigation/types';
-import { Payment } from '../../types';
+import { Course, OfferType, Payment } from '../../types';
+import { OrderResult } from '../../api/commerce';
 import { ApiError } from '../../api/client';
 import { haptics } from '../../utils/haptics';
+import { buildBundle } from '../../constants/offers';
 
 type Nav = NativeStackNavigationProp<StudentStackParamList>;
+type PaymentRoute = RouteProp<StudentStackParamList, 'Payment'>;
 type Method = Payment['method'];
 
 interface MethodInfo {
@@ -22,142 +28,112 @@ interface MethodInfo {
   label: string;
   sublabel: string;
   logo: number;
-  tone: 'primary' | 'secondary' | 'accent' | 'info';
-  /** Bankily confirms a payment with just the account's secret code. Masrvi, Sedad and
-   * Click all run on the same wallet platform (TagPay) and additionally send a one-time
-   * SMS code to confirm the transaction, matching how each app actually behaves. */
-  requiresOtp: boolean;
-  pinLength: number;
 }
 
 const METHODS: MethodInfo[] = [
-  { id: 'Bankily', label: 'Bankily', sublabel: 'Banque Populaire de Mauritanie', logo: require('../../../assets/payments/bankily.jpg'), tone: 'primary', requiresOtp: false, pinLength: 4 },
-  { id: 'Masrvi', label: 'Masrvi', sublabel: 'Banque Mauritanienne pour le Commerce International', logo: require('../../../assets/payments/masrvi.png'), tone: 'secondary', requiresOtp: true, pinLength: 4 },
-  { id: 'Sedad', label: 'Sedad', sublabel: "Banque Mauritanienne pour l'Investissement", logo: require('../../../assets/payments/sedad.png'), tone: 'accent', requiresOtp: true, pinLength: 4 },
-  { id: 'Click', label: 'Click', sublabel: 'Banque Nationale de Mauritanie', logo: require('../../../assets/payments/click.jpg'), tone: 'info', requiresOtp: true, pinLength: 4 },
+  { id: 'Bankily', label: 'Bankily', sublabel: 'Banque Populaire de Mauritanie', logo: require('../../../assets/payments/bankily.jpg') },
+  { id: 'Masrvi', label: 'Masrvi', sublabel: 'BMCI', logo: require('../../../assets/payments/masrvi.png') },
+  { id: 'Sedad', label: 'Sedad', sublabel: 'BMI', logo: require('../../../assets/payments/sedad.png') },
+  { id: 'Click', label: 'Click', sublabel: 'BNM', logo: require('../../../assets/payments/click.jpg') },
 ];
+
+function whatsappLink(number: string, text: string) {
+  return `https://wa.me/${number.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`;
+}
 
 export const PaymentScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<Nav>();
-  const { cartItems, cartTotal, purchaseCart } = useStudentData();
-  const [activeMethod, setActiveMethod] = useState<MethodInfo | null>(null);
-  const [phone, setPhone] = useState('');
-  const [passcode, setPasscode] = useState('');
-  const [otpStep, setOtpStep] = useState(false);
-  const [otp, setOtp] = useState('');
+  const route = useRoute<PaymentRoute>();
+  const { user } = useAuth();
+  const { cartItems, placeOrder, isPurchased } = useStudentData();
+  const { getCourseById, settings } = useCatalog();
+  const [method, setMethod] = useState<MethodInfo | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [paidAmount, setPaidAmount] = useState(0);
+  const [order, setOrder] = useState<OrderResult | null>(null);
 
-  const toneColors: Record<MethodInfo['tone'], { main: string; soft: string }> = {
-    primary: { main: theme.colors.primary, soft: theme.colors.primarySoft },
-    secondary: { main: theme.colors.secondary, soft: theme.colors.secondarySoft },
-    accent: { main: theme.colors.accent, soft: theme.colors.accentLight },
-    info: { main: theme.colors.info, soft: theme.colors.infoLight },
-  };
-
-  const closeModal = () => {
-    if (processing) return;
-    if (otpStep) {
-      setOtpStep(false);
-      setOtp('');
-      return;
+  const offer: OfferType = route.params?.offer ?? 'single';
+  const orderCourses: Course[] = useMemo(() => {
+    if (route.params?.courseIds) {
+      return route.params.courseIds.map((id) => getCourseById(id)).filter((c): c is Course => !!c);
     }
-    setActiveMethod(null);
-    setPhone('');
-    setPasscode('');
+    return cartItems.map((i) => i.course);
+  }, [route.params?.courseIds, cartItems, getCourseById]);
+  const bundle = useMemo(() => buildBundle(offer, orderCourses, isPurchased), [offer, orderCourses, isPurchased]);
+  const amount = bundle.price;
+  const title = route.params?.title ?? (orderCourses.length === 1 ? orderCourses[0].title : `${orderCourses.length} cours`);
+  const merchantNumber = method ? settings?.merchantNumbers?.[method.id] ?? '' : '';
+
+  const buildMessage = (result: OrderResult) =>
+    [
+      `Bonjour, voici la capture de mon paiement.`,
+      `Référence : ${result.reference}`,
+      `Nom : ${user?.fullName ?? ''}`,
+      `Email : ${user?.email ?? ''}`,
+      `Montant : ${formatPrice(result.amount)} via ${result.method}`,
+      `Commande : ${title}`,
+    ].join('\n');
+
+  const openWhatsapp = async (result: OrderResult) => {
+    const url = whatsappLink(result.whatsappNumber, buildMessage(result));
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('WhatsApp introuvable', `Envoie ta capture au ${result.whatsappNumber} avec la référence ${result.reference}.`);
+    }
   };
 
-  const submitPayment = async () => {
-    if (!activeMethod) return;
+  const confirm = async () => {
+    if (!method) return;
     setProcessing(true);
     try {
-      const amount = cartTotal;
-      await purchaseCart(activeMethod.id);
-      setPaidAmount(amount);
-      setActiveMethod(null);
-      setPhone('');
-      setPasscode('');
-      setOtpStep(false);
-      setOtp('');
-      setSuccess(true);
+      const result = await placeOrder(method.id, offer, route.params?.courseIds);
+      setMethod(null);
+      setOrder(result);
       haptics.success();
+      if (result.status === 'pending') await openWhatsapp(result);
     } catch (err) {
-      Alert.alert('Paiement échoué', err instanceof ApiError ? err.message : 'Une erreur est survenue.');
+      Alert.alert('Commande impossible', err instanceof ApiError ? err.message : 'Une erreur est survenue.');
     } finally {
       setProcessing(false);
     }
   };
 
-  const handleContinue = () => {
-    if (!activeMethod) return;
-    if (!phone.trim()) {
-      Alert.alert('Numéro requis', `Merci de renseigner le numéro associé à votre compte ${activeMethod.label}.`);
-      return;
-    }
-    if (passcode.length < activeMethod.pinLength) {
-      Alert.alert('Code secret requis', `Merci de renseigner votre code secret ${activeMethod.label}.`);
-      return;
-    }
-    if (activeMethod.requiresOtp) {
-      haptics.select();
-      setOtpStep(true);
-    } else {
-      submitPayment();
-    }
+  const copy = async (value: string, label: string) => {
+    await Clipboard.setStringAsync(value);
+    haptics.success();
+    Alert.alert('Copié', `${label} copié dans le presse-papier.`);
   };
 
-  const handleVerifyOtp = () => {
-    if (otp.length < 6) {
-      Alert.alert('Code incomplet', 'Merci de saisir le code à 6 chiffres reçu par SMS.');
-      return;
-    }
-    submitPayment();
-  };
-
-  const handleResendOtp = () => {
-    haptics.tap();
-    setOtp('');
-    Alert.alert('Code renvoyé', `Un nouveau code de vérification a été envoyé au ${phone || 'votre numéro'}.`);
-  };
-
-  if (success) {
+  if (order) {
+    const pending = order.status === 'pending';
     return (
       <ScreenContainer edges={['top']}>
         <View style={styles.successWrap}>
-          <View style={styles.successCircleOuter}>
-            <Animated.View
-              entering={ZoomIn.delay(400).duration(250)}
-              style={[styles.sparkle, { top: 4, left: 6 }]}
-            >
-              <Ionicons name="sparkles" size={14} color={theme.colors.accent} />
-            </Animated.View>
-            <Animated.View
-              entering={ZoomIn.delay(520).duration(250)}
-              style={[styles.sparkle, { bottom: 8, right: 0 }]}
-            >
-              <Ionicons name="sparkles" size={11} color={theme.colors.secondary} />
-            </Animated.View>
-            <Animated.View
-              entering={ZoomIn.delay(60).springify().damping(9)}
-              style={[styles.successCircle, { backgroundColor: theme.colors.secondarySoft }]}
-            >
-              <Ionicons name="checkmark" size={44} color={theme.colors.secondary} />
-            </Animated.View>
-          </View>
-          <Animated.Text entering={FadeInDown.delay(260).springify()} style={[styles.successTitle, { color: theme.colors.text }]}>
-            Paiement réussi !
+          <Animated.View entering={ZoomIn.springify().damping(10)} style={[styles.successCircle, { backgroundColor: pending ? theme.colors.accentLight : theme.colors.primarySoft }]}>
+            <Ionicons name={pending ? 'hourglass-outline' : 'checkmark'} size={44} color={pending ? theme.colors.warning : theme.colors.primary} />
+          </Animated.View>
+          <Animated.Text entering={FadeInDown.delay(160).springify()} style={[styles.successTitle, { color: theme.colors.text }]}>
+            {pending ? 'Commande envoyée !' : 'C\'est à toi !'}
           </Animated.Text>
-          <Animated.Text entering={FadeInDown.delay(320).springify()} style={[styles.successDesc, { color: theme.colors.textSecondary }]}>
-            Votre achat de {formatPrice(paidAmount)} a été confirmé. Vos cours sont maintenant disponibles.
+          <Animated.Text entering={FadeInDown.delay(220).springify()} style={[styles.successDesc, { color: theme.colors.textSecondary }]}>
+            {pending
+              ? 'Tes cours s\'activent dès validation.'
+              : 'Tes cours sont dans « Mes cours ».'}
           </Animated.Text>
-          <Animated.View entering={FadeInDown.delay(380).springify()}>
-            <Button
-              label="Voir mes cours"
-              onPress={() => navigation.reset({ index: 0, routes: [{ name: 'StudentTabs', params: { screen: 'MyCourses' } }] })}
-              style={{ marginTop: 12 }}
-            />
+          {pending && (
+            <Animated.View entering={FadeInDown.delay(280).springify()} style={[styles.refCard, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+              <Text style={[styles.refLabel, { color: theme.colors.textMuted }]}>Ta référence</Text>
+              <Pressable onPress={() => copy(order.reference, 'La référence')} style={styles.refRow}>
+                <Text style={[styles.refValue, { color: theme.colors.text }]}>{order.reference}</Text>
+                <Ionicons name="copy-outline" size={18} color={theme.colors.primary} />
+              </Pressable>
+              <Text style={[styles.refLabel, { color: theme.colors.textMuted }]}>{formatPrice(order.amount)} · {order.method}</Text>
+            </Animated.View>
+          )}
+          <Animated.View entering={FadeInDown.delay(340).springify()} style={{ alignSelf: 'stretch', gap: 10, marginTop: 8 }}>
+            {pending && <Button label="Renvoyer la capture sur WhatsApp" icon="logo-whatsapp" variant="outline" onPress={() => openWhatsapp(order)} />}
+            <Button label="Voir mes cours" onPress={() => navigation.reset({ index: 0, routes: [{ name: 'StudentTabs', params: { screen: 'MyCourses' } }] })} />
           </Animated.View>
         </View>
       </ScreenContainer>
@@ -167,194 +143,121 @@ export const PaymentScreen: React.FC = () => {
   return (
     <View style={{ flex: 1 }}>
       <ScreenContainer edges={['top']} scroll>
-      <View style={styles.header}>
-        <IconButton icon="arrow-back" onPress={() => navigation.goBack()} variant="ghost" style={{ marginLeft: -8 }} />
-        <Text style={[styles.title, { color: theme.colors.text }]}>Paiement</Text>
-      </View>
+        <View style={styles.header}>
+          <IconButton icon="arrow-back" onPress={() => navigation.goBack()} variant="ghost" style={{ marginLeft: -8 }} />
+          <Text style={[styles.title, { color: theme.colors.text }]}>Paiement</Text>
+        </View>
 
-      <View style={[styles.summaryCard, { backgroundColor: theme.colors.primarySoft }]}>
-        <Text style={{ color: theme.colors.textSecondary, fontSize: 12.5 }}>Montant total ({cartItems.length} cours)</Text>
-        <Text style={[styles.amount, { color: theme.colors.primary }]}>{formatPrice(cartTotal)}</Text>
-      </View>
-
-      <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>Choisissez votre mode de paiement</Text>
-      {METHODS.map((m, i) => (
-        <Animated.View key={m.id} entering={FadeInDown.delay(i * 70).springify()}>
-          <Pressable
-            onPress={() => setActiveMethod(m)}
-            style={({ pressed }) => [
-              styles.methodRow,
-              {
-                backgroundColor: theme.colors.card,
-                borderColor: theme.colors.border,
-                opacity: pressed ? 0.9 : 1,
-                transform: [{ scale: pressed ? 0.985 : 1 }],
-                ...theme.shadow('sm'),
-              },
-            ]}
-          >
-            <View style={styles.logoBox}>
-              <Image source={m.logo} style={styles.logoImage} resizeMode="contain" />
-            </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={[styles.methodLabel, { color: theme.colors.text }]}>{m.label}</Text>
-              <Text style={[styles.methodSublabel, { color: theme.colors.textMuted }]}>{m.sublabel}</Text>
-            </View>
-            <View style={[styles.chevronCircle, { backgroundColor: theme.colors.backgroundAlt }]}>
-              <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
-            </View>
-          </Pressable>
-        </Animated.View>
-      ))}
-
-      <View style={[styles.secureRow]}>
-        <Ionicons name="shield-checkmark-outline" size={16} color={theme.colors.secondary} />
-        <Text style={[styles.secureText, { color: theme.colors.textMuted }]}>Paiement 100% sécurisé (simulation)</Text>
-      </View>
-    </ScreenContainer>
-
-    {!!activeMethod && (
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalRoot}>
-        <Animated.View entering={FadeIn.duration(180)} style={StyleSheet.absoluteFill}>
-          <Pressable style={styles.backdrop} onPress={closeModal} />
-        </Animated.View>
-        <Animated.View entering={FadeInUp.springify().damping(16)} style={[styles.sheet, { backgroundColor: theme.colors.surface }]}>
-          <View style={[styles.sheetHandle, { backgroundColor: theme.colors.border }]} />
-          <IconButton icon={otpStep ? 'arrow-back' : 'close'} onPress={closeModal} variant="ghost" size={32} style={styles.sheetClose} />
-
-          {!otpStep ? (
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.sheetScroll}>
-              <View style={styles.sheetHero}>
-                <View style={[styles.sheetLogoBox, { backgroundColor: toneColors[activeMethod.tone].soft }]}>
-                  <Image source={activeMethod.logo} style={styles.logoImageLarge} resizeMode="contain" />
-                </View>
-                <Text style={[styles.sheetTitle, { color: theme.colors.text }]}>Payer avec {activeMethod.label}</Text>
-                <Text style={[styles.methodSublabel, { color: theme.colors.textMuted }]}>{activeMethod.sublabel}</Text>
-              </View>
-
-              <View style={[styles.amountCard, { backgroundColor: theme.colors.backgroundAlt }]}>
-                <Text style={[styles.amountLabel, { color: theme.colors.textMuted }]}>Montant à payer</Text>
-                <Text style={[styles.amountValue, { color: theme.colors.text }]}>{formatPrice(cartTotal)}</Text>
-              </View>
-
-              <Input
-                label={`Numéro ${activeMethod.label}`}
-                placeholder="2X XX XX XX"
-                icon="call-outline"
-                keyboardType="phone-pad"
-                value={phone}
-                onChangeText={setPhone}
-              />
-
-              <Text style={[styles.pinLabel, { color: theme.colors.textSecondary }]}>Code secret</Text>
-              <PinInput length={activeMethod.pinLength} value={passcode} onChangeText={setPasscode} />
-
-              <View style={styles.hintRow}>
-                <Ionicons name="shield-checkmark" size={13} color={theme.colors.secondary} />
-                <Text style={[styles.hint, { color: theme.colors.textMuted }]}>
-                  {activeMethod.requiresOtp
-                    ? `Un code de vérification par SMS vous sera ensuite demandé pour confirmer le paiement ${activeMethod.label}.`
-                    : `Vous recevrez une demande de confirmation ${activeMethod.label} pour valider le paiement.`}
-                </Text>
-              </View>
-            </ScrollView>
-          ) : (
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.sheetScroll}>
-              <View style={styles.sheetHero}>
-                <View style={[styles.sheetLogoBox, { backgroundColor: toneColors[activeMethod.tone].soft }]}>
-                  <Ionicons name="chatbox-ellipses-outline" size={30} color={toneColors[activeMethod.tone].main} />
-                </View>
-                <Text style={[styles.sheetTitle, { color: theme.colors.text }]}>Code de vérification</Text>
-                <Text style={[styles.methodSublabel, { color: theme.colors.textMuted, textAlign: 'center' }]}>
-                  Entrez le code à 6 chiffres envoyé par SMS {activeMethod.label} au {phone || 'votre numéro'}
-                </Text>
-              </View>
-
-              <View style={[styles.amountCard, { backgroundColor: theme.colors.backgroundAlt }]}>
-                <Text style={[styles.amountLabel, { color: theme.colors.textMuted }]}>Montant à payer</Text>
-                <Text style={[styles.amountValue, { color: theme.colors.text }]}>{formatPrice(cartTotal)}</Text>
-              </View>
-
-              <Text style={[styles.pinLabel, { color: theme.colors.textSecondary, textAlign: 'center' }]}>Code OTP</Text>
-              <PinInput length={6} value={otp} onChangeText={setOtp} secure={false} />
-
-              <Pressable onPress={handleResendOtp} style={styles.resendLink} hitSlop={8}>
-                <Text style={[styles.resendLinkText, { color: theme.colors.primary }]}>Vous n'avez rien reçu ? Renvoyer le code</Text>
-              </Pressable>
-            </ScrollView>
+        <View style={[styles.summaryCard, { backgroundColor: theme.colors.primarySoft }]}>
+          <Text style={{ color: theme.colors.textSecondary, fontSize: 12.5, fontWeight: '600' }} numberOfLines={1}>{title}</Text>
+          <Text style={[styles.amount, { color: theme.colors.primary }]}>{formatPrice(amount)}</Text>
+          {bundle.savings > 0 && <Text style={{ color: theme.colors.primary, fontSize: 12.5, fontWeight: '700' }}>Tu économises {formatPrice(bundle.savings)}</Text>}
+          {bundle.freeCourses.length > 0 && (
+            <Text style={{ color: theme.colors.primary, fontSize: 12.5, fontWeight: '700', marginTop: 2 }}>+ {bundle.freeCourses.length} cours offert(s)</Text>
           )}
+        </View>
 
-          <Button
-            label={otpStep ? `Confirmer • ${formatPrice(cartTotal)}` : activeMethod.requiresOtp ? 'Continuer' : `Confirmer • ${formatPrice(cartTotal)}`}
-            onPress={otpStep ? handleVerifyOtp : handleContinue}
-            loading={processing}
-            style={{ marginTop: 4 }}
-          />
-          <Pressable onPress={closeModal} disabled={processing} style={styles.cancelLink}>
-            <Text style={[styles.cancelLinkText, { color: theme.colors.textMuted }]}>{otpStep ? 'Retour' : 'Annuler'}</Text>
-          </Pressable>
-        </Animated.View>
-      </KeyboardAvoidingView>
-    )}
+        <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>Payer avec</Text>
+        {METHODS.map((m, i) => (
+          <Animated.View key={m.id} entering={FadeInDown.delay(i * 60).springify()}>
+            <Pressable
+              onPress={() => {
+                haptics.select();
+                setMethod(m);
+              }}
+              style={({ pressed }) => [
+                styles.methodRow,
+                { backgroundColor: theme.colors.card, borderColor: theme.colors.border, transform: [{ scale: pressed ? 0.985 : 1 }], ...theme.shadow('sm') },
+              ]}
+            >
+              <View style={styles.logoBox}>
+                <Image source={m.logo} style={styles.logoImage} resizeMode="contain" />
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[styles.methodLabel, { color: theme.colors.text }]}>{m.label}</Text>
+                <Text style={[styles.methodSublabel, { color: theme.colors.textMuted }]}>{m.sublabel}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+            </Pressable>
+          </Animated.View>
+        ))}
+      </ScreenContainer>
+
+      {!!method && (
+        <View style={styles.modalRoot}>
+          <Animated.View entering={FadeIn.duration(180)} style={StyleSheet.absoluteFill}>
+            <Pressable style={styles.backdrop} onPress={() => !processing && setMethod(null)} />
+          </Animated.View>
+          <Animated.View entering={FadeInUp.springify().damping(16)} style={[styles.sheet, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.sheetHandle, { backgroundColor: theme.colors.border }]} />
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.sheetHero}>
+                <View style={styles.sheetLogoBox}>
+                  <Image source={method.logo} style={styles.logoImage} resizeMode="contain" />
+                </View>
+                <Text style={[styles.sheetTitle, { color: theme.colors.text }]}>Payer avec {method.label}</Text>
+              </View>
+
+              <View style={[styles.payBox, { backgroundColor: theme.colors.backgroundAlt }]}>
+                <Text style={[styles.payLabel, { color: theme.colors.textMuted }]}>Montant</Text>
+                <Pressable onPress={() => copy(String(amount), 'Le montant')} style={styles.payRow}>
+                  <Text style={[styles.payValue, { color: theme.colors.text }]}>{formatPrice(amount)}</Text>
+                  <Ionicons name="copy-outline" size={18} color={theme.colors.primary} />
+                </Pressable>
+                <Text style={[styles.payLabel, { color: theme.colors.textMuted, marginTop: 10 }]}>Numéro {method.label}</Text>
+                <Pressable onPress={() => merchantNumber && copy(merchantNumber.replace(/\s/g, ''), 'Le numéro')} style={styles.payRow}>
+                  <Text style={[styles.payValue, { color: theme.colors.text }]}>{merchantNumber || '—'}</Text>
+                  <Ionicons name="copy-outline" size={18} color={theme.colors.primary} />
+                </Pressable>
+              </View>
+            </ScrollView>
+            <Button label="J'ai payé · envoyer sur WhatsApp" icon="logo-whatsapp" size="lg" loading={processing} onPress={confirm} />
+            <Pressable onPress={() => setMethod(null)} disabled={processing} style={styles.cancelLink}>
+              <Text style={[styles.cancelLinkText, { color: theme.colors.textMuted }]}>Annuler</Text>
+            </Pressable>
+          </Animated.View>
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 20 },
-  title: { fontSize: 19, fontWeight: '700', marginLeft: 4 },
-  summaryCard: { padding: 18, borderRadius: 18, marginBottom: 24 },
-  amount: { fontSize: 28, fontWeight: '700', marginTop: 6 },
-  sectionLabel: { fontSize: 14, fontWeight: '700', marginBottom: 12 },
-  methodRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 14, borderWidth: 1.5, marginBottom: 10 },
-  logoBox: {
-    width: 52,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
+  header: { flexDirection: 'row', alignItems: 'center', marginVertical: 8, marginBottom: 18 },
+  title: { fontSize: 20, fontWeight: '800', marginLeft: 4 },
+  summaryCard: { padding: 18, borderRadius: 20, marginBottom: 22 },
+  amount: { fontSize: 30, fontWeight: '900', marginTop: 4 },
+  sectionLabel: { fontSize: 15, fontWeight: '800', marginBottom: 12 },
+  stepsCard: { borderRadius: 18, padding: 14, marginBottom: 22, gap: 12 },
+  stepRow: { flexDirection: 'row', alignItems: 'center' },
+  stepNum: { width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  stepText: { flex: 1, fontSize: 13, lineHeight: 18 },
+  methodRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 16, borderWidth: 1, marginBottom: 10 },
+  logoBox: { width: 54, height: 42, borderRadius: 10, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   logoImage: { width: '100%', height: '100%' },
-  chevronCircle: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  methodLabel: { fontSize: 13.5, fontWeight: '700' },
-  methodSublabel: { fontSize: 11, marginTop: 2 },
-  secureRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 12, marginBottom: 4 },
-  secureText: { fontSize: 11.5, marginLeft: 6 },
-  successWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  successCircleOuter: { marginBottom: 24 },
-  sparkle: { position: 'absolute', zIndex: 1 },
-  successCircle: { width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' },
-  successTitle: { fontSize: 22, fontWeight: '700', marginBottom: 12 },
-  successDesc: { fontSize: 14, textAlign: 'center', lineHeight: 21 },
-
+  methodLabel: { fontSize: 14, fontWeight: '800' },
+  methodSublabel: { fontSize: 11.5, marginTop: 2 },
+  successWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  successCircle: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 22 },
+  successTitle: { fontSize: 24, fontWeight: '900', marginBottom: 10 },
+  successDesc: { fontSize: 14, textAlign: 'center', lineHeight: 21, marginBottom: 18 },
+  refCard: { alignSelf: 'stretch', borderRadius: 18, padding: 16, alignItems: 'center', marginBottom: 12 },
+  refLabel: { fontSize: 12, fontWeight: '600' },
+  refRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 6 },
+  refValue: { fontSize: 24, fontWeight: '900', letterSpacing: 1 },
   modalRoot: { ...StyleSheet.absoluteFill, justifyContent: 'flex-end' } as const,
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(14, 14, 19, 0.55)' } as const,
-  sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 36, maxHeight: '90%' },
-  sheetScroll: { maxHeight: 420 },
-  sheetHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 8 },
-  sheetClose: { position: 'absolute', top: 16, right: 16, zIndex: 1 },
-  sheetHero: { alignItems: 'center', marginTop: 12, marginBottom: 20 },
-  sheetLogoBox: {
-    width: 68,
-    height: 68,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    marginBottom: 12,
-  },
-  logoImageLarge: { width: '62%', height: '62%' },
-  sheetTitle: { fontSize: 17, fontWeight: '700' },
-  amountCard: { borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginBottom: 20 },
-  amountLabel: { fontSize: 11.5, fontWeight: '600' },
-  amountValue: { fontSize: 30, fontWeight: '700', marginTop: 4 },
-  pinLabel: { fontSize: 13, fontWeight: '600', marginBottom: 8, marginTop: 4 },
-  hintRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 16, marginBottom: 18, gap: 6 },
-  hint: { flex: 1, fontSize: 11.5, lineHeight: 16 },
-  cancelLink: { alignSelf: 'center', marginTop: 14, padding: 4 },
+  sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 22, paddingBottom: 34, maxHeight: '88%' },
+  sheetHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 10 },
+  sheetHero: { alignItems: 'center', marginBottom: 16 },
+  sheetLogoBox: { width: 70, height: 56, borderRadius: 14, backgroundColor: '#fff', overflow: 'hidden', marginBottom: 10 },
+  sheetTitle: { fontSize: 18, fontWeight: '800' },
+  payBox: { borderRadius: 18, padding: 16, marginBottom: 14 },
+  payLabel: { fontSize: 12, fontWeight: '700' },
+  payRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  payValue: { fontSize: 24, fontWeight: '900' },
+  hintRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  hint: { flex: 1, fontSize: 12.5, lineHeight: 18 },
+  cancelLink: { alignSelf: 'center', marginTop: 12, padding: 4 },
   cancelLinkText: { fontSize: 13, fontWeight: '600' },
-  resendLink: { alignSelf: 'center', marginTop: 20, marginBottom: 4, padding: 4 },
-  resendLinkText: { fontSize: 13, fontWeight: '700' },
 });

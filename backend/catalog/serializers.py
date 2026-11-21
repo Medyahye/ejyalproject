@@ -1,6 +1,48 @@
+from django.utils import timezone
 from rest_framework import serializers
 
-from .models import Category, Course, CoursePdf, Lesson, Review
+from .models import Category, Course, CoursePdf, Lesson, Review, SchoolSettings, SchoolTerm, Track
+
+
+class TrackSerializer(serializers.ModelSerializer):
+    id = serializers.SlugField(source='slug')
+    shortLabel = serializers.CharField(source='short_label')
+    mainCategoryIds = serializers.PrimaryKeyRelatedField(
+        source='main_categories', many=True, queryset=Category.objects.all(), required=False,
+    )
+
+    class Meta:
+        model = Track
+        fields = ['id', 'label', 'shortLabel', 'code', 'level', 'order', 'mainCategoryIds']
+
+
+class SchoolTermSerializer(serializers.ModelSerializer):
+    startDate = serializers.DateField(source='start_date')
+    endDate = serializers.DateField(source='end_date')
+    isCurrent = serializers.SerializerMethodField()
+    isStarted = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SchoolTerm
+        fields = ['number', 'label', 'startDate', 'endDate', 'isCurrent', 'isStarted']
+        read_only_fields = ['number']
+
+    def get_isCurrent(self, obj):
+        return obj.start_date <= timezone.localdate() <= obj.end_date
+
+    def get_isStarted(self, obj):
+        return obj.start_date <= timezone.localdate()
+
+
+class SchoolSettingsSerializer(serializers.ModelSerializer):
+    whatsappNumber = serializers.CharField(source='whatsapp_number')
+    merchantNumbers = serializers.JSONField(source='merchant_numbers')
+    defaultMaxViews = serializers.IntegerField(source='default_max_views', min_value=1, max_value=50)
+    teacherOfferMaxViews = serializers.IntegerField(source='teacher_offer_max_views', min_value=1, max_value=50)
+
+    class Meta:
+        model = SchoolSettings
+        fields = ['whatsappNumber', 'merchantNumbers', 'defaultMaxViews', 'teacherOfferMaxViews']
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -75,6 +117,13 @@ class CourseSerializer(serializers.ModelSerializer):
     gradeTracks = serializers.ListField(source='grade_tracks', child=serializers.CharField(), required=False)
     lessons = LessonSerializer(many=True, read_only=True)
     pdfs = CoursePdfSerializer(many=True, read_only=True)
+    teacherHeadline = serializers.CharField(source='teacher.headline', read_only=True)
+    contentType = serializers.ChoiceField(source='content_type', choices=Course.ContentType.choices, required=False)
+    isClosed = serializers.SerializerMethodField()
+    promoFreeUntil = serializers.SerializerMethodField()
+    isFree = serializers.SerializerMethodField()
+    isLocked = serializers.SerializerMethodField()
+    unlockDate = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -84,8 +133,39 @@ class CourseSerializer(serializers.ModelSerializer):
             'price', 'originalPrice', 'rating', 'ratingCount', 'studentsCount',
             'level', 'gradeTracks', 'language', 'durationHours', 'lastUpdated', 'lessons', 'pdfs',
             'whatYouWillLearn', 'requirements', 'isFeatured', 'isBestseller',
+            'teacherHeadline', 'term', 'contentType', 'isClosed', 'promoFreeUntil', 'isFree', 'isLocked', 'unlockDate',
         ]
         read_only_fields = ['id', 'rating']
+
+    def _terms(self):
+        cache = self.context.setdefault('_terms', None) if isinstance(self.context, dict) else None
+        if cache is None:
+            cache = {t.number: t for t in SchoolTerm.objects.all()}
+            if isinstance(self.context, dict):
+                self.context['_terms'] = cache
+        return cache
+
+    def get_isClosed(self, obj):
+        return obj.is_closed or obj.teacher.packs_closed
+
+    def get_promoFreeUntil(self, obj):
+        until = obj.free_until()
+        return until.isoformat() if until else None
+
+    def get_isFree(self, obj):
+        return obj.is_free()
+
+    def get_isLocked(self, obj):
+        return obj.is_locked(self._terms())
+
+    def get_unlockDate(self, obj):
+        unlock = obj.unlock_date(self._terms())
+        return unlock.isoformat() if unlock else None
+
+    def validate_term(self, value):
+        if value not in (1, 2, 3):
+            raise serializers.ValidationError('Le trimestre doit être 1, 2 ou 3.')
+        return value
 
     def get_coverGradient(self, obj):
         return [obj.cover_gradient_start, obj.cover_gradient_end]

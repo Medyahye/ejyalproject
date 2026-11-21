@@ -2,7 +2,10 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from accounts.models import User
-from catalog.models import Category, Course, CoursePdf, Lesson, Review
+import datetime
+
+from catalog.demo_media import demo_pdf, demo_video
+from catalog.models import Category, Course, CoursePdf, Lesson, Review, SchoolSettings, SchoolTerm, Track
 from commerce.models import CartItem, Enrollment, Favorite, Payment
 from live.models import LiveChatMessage, LiveSession
 
@@ -19,6 +22,53 @@ CATEGORIES = [
     ('cat-8', 'Anglais', 'language', '#FDCB6E'),
     ('cat-9', 'Concours & Culture Générale', 'trophy', '#00785C'),
 ]
+
+# Classes from primaire to Bac (7T removed). (slug, label, short, code, level, main category keys)
+TRACKS = [
+    ('1af', '1ère année fondamentale', '1ère AF', '1AF', 'primaire', ['cat-1', 'cat-4']),
+    ('2af', '2ème année fondamentale', '2ème AF', '2AF', 'primaire', ['cat-1', 'cat-4']),
+    ('3af', '3ème année fondamentale', '3ème AF', '3AF', 'primaire', ['cat-1', 'cat-4']),
+    ('4af', '4ème année fondamentale', '4ème AF', '4AF', 'primaire', ['cat-1', 'cat-4', 'cat-5']),
+    ('5af', '5ème année fondamentale', '5ème AF', '5AF', 'primaire', ['cat-1', 'cat-4', 'cat-5']),
+    ('6af', '6ème année fondamentale (concours d\'entrée)', '6ème AF', '6AF', 'primaire', ['cat-1', 'cat-4', 'cat-5']),
+    ('1as', '1ère année secondaire', '1ère AS', '1AS', 'college', ['cat-1', 'cat-4', 'cat-5']),
+    ('2as', '2ème année secondaire', '2ème AS', '2AS', 'college', ['cat-1', 'cat-4', 'cat-5']),
+    ('3as', '3ème année secondaire', '3ème AS', '3AS', 'college', ['cat-1', 'cat-2', 'cat-5']),
+    ('brevet', '4ème année secondaire — Brevet (BEPC)', '4ème AS · Brevet', '4AS', 'college', ['cat-1', 'cat-2', 'cat-5']),
+    ('5as', '5ème année secondaire', '5ème AS', '5AS', 'lycee', ['cat-1', 'cat-2', 'cat-3']),
+    ('6as', '6ème année secondaire', '6ème AS', '6AS', 'lycee', ['cat-1', 'cat-2', 'cat-3']),
+    ('bac-c', 'Bac Série C (Maths)', 'Série C', '7C', 'lycee', ['cat-1', 'cat-2']),
+    ('bac-d', 'Bac Série D (Sciences naturelles)', 'Série D', '7D', 'lycee', ['cat-3', 'cat-2', 'cat-1']),
+    ('bac-lm', 'Bac Série LM (Lettres modernes)', 'Série LM', '7LM', 'lycee', ['cat-5', 'cat-6', 'cat-8']),
+    ('bac-lo', 'Bac Série LO (Lettres originelles)', 'Série LO', '7LO', 'lycee', ['cat-4', 'cat-6']),
+    ('concours', 'Concours nationaux', 'Concours', 'CO', 'concours', ['cat-9']),
+]
+
+TERMS = [
+    (1, '1er trimestre', datetime.date(2026, 10, 1), datetime.date(2026, 12, 31)),
+    (2, '2ème trimestre', datetime.date(2027, 1, 4), datetime.date(2027, 3, 31)),
+    (3, '3ème trimestre', datetime.date(2027, 4, 5), datetime.date(2027, 6, 30)),
+]
+
+STAFF = [
+    dict(key='director', fullName='Directeur Général', email='directeur@generations.mr', role='director',
+         avatar='https://i.pravatar.cc/150?img=60'),
+    dict(key='admin', fullName='Administrateur', email='admin@generations.mr', role='admin',
+         avatar='https://i.pravatar.cc/150?img=58'),
+]
+
+# Per-course trimester, content type and promos (notes : packs par trimestre, vidéo/pdf, promos gratuites).
+COURSE_TERMS = {
+    'course-1': (1, 'both'), 'course-2': (1, 'both'), 'course-3': (1, 'both'), 'course-4': (1, 'both'),
+    'course-5': (1, 'video'), 'course-6': (2, 'both'), 'course-7': (1, 'video'), 'course-8': (2, 'pdf'),
+    'course-9': (3, 'both'), 'course-10': (2, 'both'), 'course-11': (1, 'both'), 'course-12': (1, 'video'),
+    'course-13': (1, 'both'), 'course-14': (1, 'pdf'),
+}
+COURSE_PROMOS = {'course-4': datetime.date(2026, 12, 15), 'course-11': datetime.date(2026, 12, 31)}
+TEACHER_TERMS = {
+    'teacher-1': dict(revenue_share=60), 'teacher-2': dict(revenue_share=55),
+    'teacher-3': dict(revenue_share=50), 'teacher-4': dict(revenue_share=50, promo_free_until=datetime.date(2026, 12, 1)),
+}
 
 TEACHERS = [
     dict(key='teacher-1', fullName='Mohamed Ould Sidi Ahmed', email='mohamed.sidiahmed@educonnect.mr', avatar='https://i.pravatar.cc/150?img=68',
@@ -60,7 +110,7 @@ STUDENTS = [
 def make_lessons(titles, seed):
     return [
         dict(title=t, duration_minutes=8 + ((i * 7) % 25), is_preview=(i == 0),
-             video_url='https://example.com/mock-video.mp4',
+             video_url=demo_video(i), pdf_title=f'{t} — Fiche de cours', pdf_uri=demo_pdf(i), pdf_pages=4, pdf_size_mb=0.3,
              thumbnail=f'https://picsum.photos/seed/{seed}-{i}/400/250', order=i)
         for i, t in enumerate(titles)
     ]
@@ -69,7 +119,7 @@ def make_lessons(titles, seed):
 def make_pdfs(seed, count):
     return [
         dict(title=f'Support de cours {i + 1} — {seed}', size_mb=round(1.2 + i * 0.6, 1),
-             pages=12 + i * 6, uri='https://example.com/mock-support.pdf', order=i)
+             pages=12 + i * 6, uri=demo_pdf(i), order=i)
         for i in range(count)
     ]
 
@@ -165,6 +215,56 @@ COURSES = [
          what_you_will_learn=["Connaître l'histoire de la Mauritanie", 'Analyser les enjeux géographiques du Sahel', 'Maîtriser la méthodologie de la composition', "Réussir l'épreuve d'Histoire-Géographie"],
          requirements=['Programme Bac ou Brevet'],
          language='Français', is_featured=False, is_bestseller=True),
+    dict(key='course-10', title='Mathématiques Terminale C — 2ème trimestre', subtitle='Intégrales, équations différentielles et géométrie',
+         description="La suite du programme de Terminale C pour le deuxième trimestre : calcul intégral, équations différentielles et géométrie dans l'espace, avec les sujets du Bac corrigés.",
+         thumbnail='https://picsum.photos/seed/maths-c-t2/600/400', gradient=('#5642D6', '#221A54'),
+         teacher='teacher-1', category='cat-1', price=2500, original_price=4500,
+         level='Avancé', grade_tracks=['bac-c'], duration_hours=24,
+         lessons=make_lessons(['Calcul intégral', 'Équations différentielles', "Géométrie dans l'espace", 'Sujets du Bac corrigés'], 'maths-c-t2'),
+         pdfs=make_pdfs('Maths Terminale C T2', 2),
+         what_you_will_learn=['Calculer des intégrales', 'Résoudre des équations différentielles', "Maîtriser la géométrie dans l'espace"],
+         requirements=['Programme du 1er trimestre'],
+         language='Français', is_featured=False, is_bestseller=False),
+    dict(key='course-11', title="Mathématiques 6ème AF — Concours d'entrée", subtitle='Calcul, problèmes et géométrie du primaire',
+         description="Préparez le concours d'entrée en 1ère année secondaire : opérations, fractions, problèmes et géométrie, avec des exercices progressifs et ludiques.",
+         thumbnail='https://picsum.photos/seed/maths-6af/600/400', gradient=('#00B894', '#00785C'),
+         teacher='teacher-1', category='cat-1', price=1000, original_price=1800,
+         level='Débutant', grade_tracks=['5af', '6af'], duration_hours=12,
+         lessons=make_lessons(['Les quatre opérations', 'Fractions et décimaux', 'Problèmes de la vie courante', 'Géométrie : périmètres et aires'], 'maths-6af'),
+         pdfs=make_pdfs('Maths 6AF', 2),
+         what_you_will_learn=['Calculer vite et juste', 'Résoudre des problèmes', "Réussir le concours d'entrée"],
+         requirements=['Niveau 5ème AF'],
+         language='Français', is_featured=True, is_bestseller=False),
+    dict(key='course-12', title='Arabe — Primaire (1AF à 4AF)', subtitle='Lecture, écriture et grammaire de base',
+         description="Apprendre à lire et écrire l'arabe avec plaisir : alphabet, lecture syllabique, dictée et premières règles de grammaire.",
+         thumbnail='https://picsum.photos/seed/arabe-primaire/600/400', gradient=('#E8A93C', '#FF6B6B'),
+         teacher='teacher-3', category='cat-4', price=800, original_price=None,
+         level='Débutant', grade_tracks=['1af', '2af', '3af', '4af'], duration_hours=10,
+         lessons=make_lessons(["L'alphabet en chantant", 'Lecture syllabique', 'La dictée', 'Premières règles de grammaire'], 'arabe-primaire'),
+         pdfs=make_pdfs('Arabe primaire', 1),
+         what_you_will_learn=["Lire et écrire l'arabe", 'Enrichir son vocabulaire', 'Écrire sans fautes'],
+         requirements=['Aucun'],
+         language='Arabe', is_featured=False, is_bestseller=True),
+    dict(key='course-13', title='Français Collège — 1ère à 3ème AS', subtitle='Grammaire, conjugaison et expression écrite',
+         description='Tout le français du collège : grammaire, conjugaison, compréhension de texte et rédaction, avec des fiches de révision.',
+         thumbnail='https://picsum.photos/seed/francais-college/600/400', gradient=('#FF6B6B', '#E64A4A'),
+         teacher='teacher-4', category='cat-5', price=1200, original_price=2000,
+         level='Intermédiaire', grade_tracks=['1as', '2as', '3as'], duration_hours=15,
+         lessons=make_lessons(['La phrase et ses constituants', 'Les temps de l\'indicatif', 'Compréhension de texte', 'Rédiger un récit'], 'francais-college'),
+         pdfs=make_pdfs('Français collège', 2),
+         what_you_will_learn=['Maîtriser la conjugaison', 'Comprendre un texte', 'Rédiger avec méthode'],
+         requirements=['Niveau primaire validé'],
+         language='Français', is_featured=False, is_bestseller=False),
+    dict(key='course-14', title='Physique-Chimie Brevet (4ème AS)', subtitle='Électricité, mécanique et chimie du Brevet',
+         description="Les fiches et exercices corrigés pour réussir la Physique-Chimie du Brevet : circuits, forces, atomes et réactions chimiques.",
+         thumbnail='https://picsum.photos/seed/pc-brevet/600/400', gradient=('#3D7FF7', '#2C63D6'),
+         teacher='teacher-2', category='cat-2', price=1300, original_price=None,
+         level='Intermédiaire', grade_tracks=['3as', 'brevet'], duration_hours=11,
+         lessons=make_lessons(['Circuits électriques', 'Forces et mouvements', 'Atomes et molécules', 'Réactions chimiques'], 'pc-brevet'),
+         pdfs=make_pdfs('PC Brevet', 3),
+         what_you_will_learn=["Analyser un circuit", 'Comprendre les forces', 'Équilibrer une réaction'],
+         requirements=['Programme de 3ème AS'],
+         language='Français', is_featured=False, is_bestseller=False),
 ]
 
 REVIEWS = [
@@ -185,6 +285,9 @@ ENROLLMENTS = [
 ]
 
 FAVORITES = [('student-1', 'course-2'), ('student-1', 'course-9'), ('student-2', 'course-1')]
+
+# A pending WhatsApp order for Mariem, so the demo shows the "en attente de validation" state.
+PENDING_ORDERS = [('student-1', 'course-6', 'Bankily', 'GF-DEMO01')]
 
 PAYMENTS = [
     dict(course='course-1', student='student-1', amount=2500, method='Bankily', status='Réussi'),
@@ -229,19 +332,40 @@ LIVE_CHAT = [
 ]
 
 
+# The school keeps only its maths and sciences teachers for now: the demo data of the
+# other teachers (and everything attached to their courses) is not seeded anymore.
+REMOVED_TEACHERS = {'teacher-3', 'teacher-4'}
+TEACHERS = [t for t in TEACHERS if t['key'] not in REMOVED_TEACHERS]
+TEACHER_TERMS = {k: v for k, v in TEACHER_TERMS.items() if k not in REMOVED_TEACHERS}
+COURSES = [c for c in COURSES if c['teacher'] not in REMOVED_TEACHERS]
+_KEPT_COURSES = {c['key'] for c in COURSES}
+REVIEWS = [r for r in REVIEWS if r['course'] in _KEPT_COURSES]
+ENROLLMENTS = [e for e in ENROLLMENTS if e[1] in _KEPT_COURSES]
+FAVORITES = [f for f in FAVORITES if f[1] in _KEPT_COURSES]
+PENDING_ORDERS = [o for o in PENDING_ORDERS if o[1] in _KEPT_COURSES]
+PAYMENTS = [p for p in PAYMENTS if p['course'] in _KEPT_COURSES]
+LIVE_SESSIONS = [l for l in LIVE_SESSIONS if l['teacher'] not in REMOVED_TEACHERS]
+_KEPT_LIVES = {l['key'] for l in LIVE_SESSIONS}
+LIVE_CHAT = [m for m in LIVE_CHAT if m[0] in _KEPT_LIVES and m[1] not in REMOVED_TEACHERS]
+
+
 class Command(BaseCommand):
     help = 'Seeds the database with demo data equivalent to the frontend mock data (idempotent).'
 
     @transaction.atomic
     def handle(self, *args, **options):
         categories = self._seed_categories()
+        self._seed_school(categories)
         teachers = self._seed_users(TEACHERS, User.Role.TEACHER)
         students = self._seed_users(STUDENTS, User.Role.STUDENT)
+        self._seed_staff()
         courses = self._seed_courses(categories, teachers)
+        self._seed_business_terms(courses, teachers)
         self._seed_reviews(courses, students)
         self._seed_enrollments(courses, students)
         self._seed_favorites(courses, students)
         self._seed_payments(courses, students)
+        self._seed_pending_orders(courses, students)
         self._seed_live(courses, teachers, students)
 
         self.stdout.write(self.style.SUCCESS(
@@ -255,6 +379,64 @@ class Command(BaseCommand):
             obj, _ = Category.objects.get_or_create(name=name, defaults={'icon': icon, 'color': color})
             result[key] = obj
         return result
+
+    def _seed_school(self, categories):
+        for order, (slug, label, short, code, level, mains) in enumerate(TRACKS):
+            track, _ = Track.objects.update_or_create(
+                slug=slug, defaults=dict(label=label, short_label=short, code=code, level=level, order=order),
+            )
+            if not track.main_categories.exists():
+                track.main_categories.set([categories[k] for k in mains])
+        Track.objects.filter(slug='bac-t').delete()
+        for number, label, start, end in TERMS:
+            SchoolTerm.objects.get_or_create(number=number, defaults=dict(label=label, start_date=start, end_date=end))
+        settings_obj = SchoolSettings.load()
+        if not settings_obj.merchant_numbers:
+            settings_obj.whatsapp_number = '22236000000'
+            settings_obj.merchant_numbers = {'Bankily': '36 00 00 00', 'Masrvi': '36 00 00 01', 'Sedad': '36 00 00 02', 'Click': '36 00 00 03'}
+            settings_obj.save()
+
+    def _seed_staff(self):
+        for entry in STAFF:
+            user, created = User.objects.get_or_create(
+                email=entry['email'],
+                defaults=dict(full_name=entry['fullName'], role=entry['role'], avatar=entry['avatar']),
+            )
+            if created:
+                user.set_password(DEMO_PASSWORD)
+                user.save()
+
+    def _seed_business_terms(self, courses, teachers):
+        for key, (term, content_type) in COURSE_TERMS.items():
+            course = courses.get(key)
+            if course and (course.term, course.content_type) != (term, content_type):
+                course.term, course.content_type = term, content_type
+                course.save(update_fields=['term', 'content_type'])
+        for key, until in COURSE_PROMOS.items():
+            course = courses.get(key)
+            if course and course.promo_free_until is None:
+                course.promo_free_until = until
+                course.save(update_fields=['promo_free_until'])
+        for key, fields in TEACHER_TERMS.items():
+            teacher = teachers[key]
+            if teacher.revenue_share == 50 and teacher.promo_free_until is None:
+                for f, v in fields.items():
+                    setattr(teacher, f, v)
+                teacher.save(update_fields=list(fields))
+
+    def _seed_pending_orders(self, courses, students):
+        for student_key, course_key, method, reference in PENDING_ORDERS:
+            if Payment.objects.filter(reference=reference).exists():
+                continue
+            course, student = courses[course_key], students[student_key]
+            if Enrollment.objects.filter(student=student, course=course).exists():
+                continue
+            Enrollment.objects.create(student=student, course=course, status='pending')
+            Payment.objects.create(student=student, course=course, amount=course.price, method=method,
+                                   status='En attente', reference=reference)
+        for i, p in enumerate(Payment.objects.filter(reference='').order_by('id')):
+            p.reference = f'GF-OLD{i:03d}'
+            p.save(update_fields=['reference'])
 
     def _seed_users(self, entries, role):
         result = {}

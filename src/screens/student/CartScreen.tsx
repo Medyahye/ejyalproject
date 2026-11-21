@@ -28,7 +28,6 @@ export const CartScreen: React.FC = () => {
         <EmptyState
           icon="cart-outline"
           title="Votre panier est vide"
-          description="Parcourez le catalogue et ajoutez des cours qui vous intéressent."
           actionLabel="Explorer les cours"
           onAction={() => navigation.navigate('StudentTabs', { screen: 'Explore' })}
         />

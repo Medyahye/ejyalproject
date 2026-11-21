@@ -85,7 +85,7 @@ export const ScheduleLiveScreen: React.FC = () => {
         scheduledAt: scheduledAt.toISOString(),
         durationMinutes: duration,
       });
-      Alert.alert('Live planifié 🎉', `"${title}" est programmé ${previewLabel}.`, [
+      Alert.alert('Live planifié', `"${title}" est programmé ${previewLabel}.`, [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (err) {

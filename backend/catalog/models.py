@@ -5,7 +5,62 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from accounts.models import User
+
+
+class Track(models.Model):
+    """A class/filière (1AF, 3AS, 7C…) grouped by school level. Managed by the director."""
+
+    class Level(models.TextChoices):
+        PRIMAIRE = 'primaire', 'Primaire'
+        COLLEGE = 'college', 'Collège'
+        LYCEE = 'lycee', 'Lycée & Bac'
+        CONCOURS = 'concours', 'Concours'
+
+    slug = models.SlugField(primary_key=True, max_length=20)
+    label = models.CharField(max_length=80)
+    short_label = models.CharField(max_length=40)
+    code = models.CharField(max_length=6)
+    level = models.CharField(max_length=10, choices=Level.choices)
+    order = models.PositiveIntegerField(default=0)
+    main_categories = models.ManyToManyField(
+        'Category', blank=True, related_name='main_for_tracks',
+        help_text='Matières principales (fort coefficient) — les autres sont les matières secondaires.',
+    )
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return self.label
+
+
+class SchoolTerm(models.Model):
+    """Trimestre scolaire : les cours d'un trimestre se débloquent à sa date de début."""
+
+    number = models.PositiveSmallIntegerField(primary_key=True)
+    label = models.CharField(max_length=40)
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    class Meta:
+        ordering = ['number']
+
+    def __str__(self):
+        return self.label
+
+
+class SchoolSettings(models.Model):
+    """Singleton (pk=1) of platform-wide settings editable by the director."""
+
+    whatsapp_number = models.CharField(max_length=20, default='22200000000')
+    merchant_numbers = models.JSONField(default=dict, blank=True)
+    default_max_views = models.PositiveSmallIntegerField(default=4)
+    teacher_offer_max_views = models.PositiveSmallIntegerField(default=2)
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
 
 
 class Category(models.Model):
@@ -51,7 +106,7 @@ class Course(models.Model):
 
     level = models.CharField(max_length=20, choices=Level.choices)
     grade_tracks = ArrayField(
-        models.CharField(max_length=10, choices=User.GradeTrack.choices),
+        models.CharField(max_length=20),
         default=list, blank=True,
         help_text='Filières Bac/Brevet/Concours pour lesquelles ce cours est pertinent.',
     )
@@ -65,8 +120,39 @@ class Course(models.Model):
     is_featured = models.BooleanField(default=False)
     is_bestseller = models.BooleanField(default=False)
 
+    class ContentType(models.TextChoices):
+        VIDEO = 'video', 'Vidéo'
+        PDF = 'pdf', 'PDF'
+        BOTH = 'both', 'Vidéo + PDF'
+
+    term = models.PositiveSmallIntegerField(default=1, help_text='Trimestre (1, 2 ou 3) — débloqué au début du trimestre.')
+    content_type = models.CharField(max_length=5, choices=ContentType.choices, default=ContentType.BOTH)
+    is_closed = models.BooleanField(default=False, help_text='Fermé par un administrateur.')
+    promo_free_until = models.DateField(null=True, blank=True, help_text="Gratuit jusqu'à cette date.")
+
     class Meta:
         ordering = ['-last_updated']
+
+    def free_until(self):
+        dates = [d for d in (self.promo_free_until, self.teacher.promo_free_until) if d]
+        return max(dates) if dates else None
+
+    def is_free(self, today=None):
+        from django.utils import timezone
+        today = today or timezone.localdate()
+        until = self.free_until()
+        return bool(until and until >= today)
+
+    def unlock_date(self, terms=None):
+        terms = terms if terms is not None else {t.number: t for t in SchoolTerm.objects.all()}
+        term = terms.get(self.term)
+        return term.start_date if term else None
+
+    def is_locked(self, terms=None, today=None):
+        from django.utils import timezone
+        today = today or timezone.localdate()
+        unlock = self.unlock_date(terms)
+        return bool(unlock and unlock > today)
 
     def __str__(self):
         return self.title

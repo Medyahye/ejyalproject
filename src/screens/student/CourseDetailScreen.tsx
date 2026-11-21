@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -22,6 +22,9 @@ import { ReviewItem } from '../../components/course';
 import { fetchCourseReviews } from '../../api/catalog';
 import { Review } from '../../types';
 import { formatPrice, formatDuration, formatDate } from '../../utils/formatters';
+import { CONTENT_TYPE_INFO, TERM_LABELS } from '../../constants/offers';
+import { ApiError } from '../../api/client';
+import { haptics } from '../../utils/haptics';
 import { StudentStackParamList } from '../../navigation/types';
 import { FEATURES } from '../../constants/features';
 
@@ -34,10 +37,13 @@ export const CourseDetailScreen: React.FC = () => {
   const { theme } = useTheme();
   const route = useRoute<DetailRoute>();
   const navigation = useNavigation<DetailNav>();
-  const { isFavorite, toggleFavorite, isInCart, addToCart, isPurchased } = useStudentData();
+  const { isFavorite, toggleFavorite, isInCart, addToCart, isPurchased, isPending, enrollmentFor, placeOrder } = useStudentData();
   const { getCourseById } = useCatalog();
   const [tab, setTab] = useState<Tab>('overview');
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [claiming, setClaiming] = useState(false);
+  const heartScale = useSharedValue(1);
+  const heartAnimatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: heartScale.value }] }));
 
   const course = getCourseById(route.params.courseId);
 
@@ -48,16 +54,32 @@ export const CourseDetailScreen: React.FC = () => {
 
   if (!course) return null;
 
+  // This screen is shared with the teacher stack, where student-only routes don't exist.
+  const isStudentStack = navigation.getState()?.routeNames?.includes('TeacherProfile') ?? false;
   const owned = isPurchased(course.id);
+  const pending = isPending(course.id);
   const inCart = isInCart(course.id);
   const fav = isFavorite(course.id);
+  const enrollment = enrollmentFor(course.id);
+  const content = CONTENT_TYPE_INFO[course.contentType] ?? CONTENT_TYPE_INFO.both;
 
-  const heartScale = useSharedValue(1);
   const handleToggleFavorite = () => {
     heartScale.value = withSequence(withTiming(1.35, { duration: 120 }), withTiming(1, { duration: 160 }));
     toggleFavorite(course.id);
   };
-  const heartAnimatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: heartScale.value }] }));
+
+  const claimFree = async () => {
+    setClaiming(true);
+    try {
+      await placeOrder('Bankily', 'single', [course.id]);
+      haptics.success();
+      Alert.alert('C\'est à toi !', 'Ce cours gratuit est maintenant dans « Mes cours ».');
+    } catch (err) {
+      Alert.alert('Oups', err instanceof ApiError ? err.message : 'Une erreur est survenue.');
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -80,147 +102,111 @@ export const CourseDetailScreen: React.FC = () => {
 
         <View style={styles.content}>
           <Animated.View entering={FadeInDown.delay(80).springify()}>
-            <View style={styles.badgeRow}>
-              <Badge label={course.categoryName} tone="primary" small />
-              {course.isBestseller && <Badge label="Best-seller" tone="warning" small />}
-            </View>
+            {course.isLocked && course.unlockDate && (
+              <View style={[styles.lockBanner, { backgroundColor: theme.colors.backgroundAlt }]}>
+                <Ionicons name="lock-closed" size={16} color={theme.colors.textSecondary} />
+                <Text style={[styles.lockBannerText, { color: theme.colors.textSecondary }]}>Disponible le {formatDate(course.unlockDate)}</Text>
+              </View>
+            )}
             <Text style={[styles.title, { color: theme.colors.text }]}>{course.title}</Text>
-            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>{course.subtitle}</Text>
-
-            <View style={styles.metaRow}>
-              <RatingStars rating={course.rating} size={13} count={course.ratingCount} />
-              <Text style={[styles.metaDot, { color: theme.colors.textMuted }]}> · </Text>
-              <Ionicons name="people-outline" size={14} color={theme.colors.textMuted} />
-              <Text style={[styles.metaText, { color: theme.colors.textMuted }]}>{course.studentsCount.toLocaleString('fr-FR')} inscrits</Text>
+            <View style={styles.badgeRow}>
+              <Badge label={TERM_LABELS[course.term] ?? `T${course.term}`} tone="info" small />
+              {course.isFree && <Badge label="Offert" tone="success" small />}
             </View>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(140).springify()}>
-            <Pressable style={[styles.teacherRow, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+          <Animated.View entering={FadeInDown.delay(120).springify()}>
+            <Pressable
+              disabled={!isStudentStack}
+              onPress={() => navigation.navigate('TeacherProfile', { teacherId: course.teacherId })}
+              style={[styles.teacherRow, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}
+            >
               <Avatar uri={course.teacherAvatar} size={44} />
-              <View style={{ marginLeft: 12, flex: 1 }}>
-                <Text style={[styles.teacherLabel, { color: theme.colors.textMuted }]}>Formateur</Text>
-                <Text style={[styles.teacherName, { color: theme.colors.text }]}>{course.teacherName}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+              <Text style={[styles.teacherName, { color: theme.colors.text, flex: 1, marginLeft: 12 }]} numberOfLines={1}>{course.teacherName}</Text>
+              {isStudentStack && <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />}
             </Pressable>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(170).springify()} style={{ marginBottom: 20 }}>
-            <SegmentedControl
-              value={tab}
-              onChange={setTab}
-              options={[
-                { id: 'overview', label: 'Aperçu' },
-                { id: 'curriculum', label: 'Programme' },
-                { id: 'reviews', label: `Avis (${reviews.length})` },
-              ]}
-            />
-          </Animated.View>
-
-          {tab === 'overview' && (
-            <Animated.View entering={FadeInDown.duration(220)}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Description</Text>
-              <Text style={[styles.description, { color: theme.colors.textSecondary }]}>{course.description}</Text>
-
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Ce que vous apprendrez</Text>
-              {course.whatYouWillLearn.map((item, i) => (
-                <View key={i} style={styles.learnRow}>
-                  <Ionicons name="checkmark-circle" size={18} color={theme.colors.secondary} />
-                  <Text style={[styles.learnText, { color: theme.colors.textSecondary }]}>{item}</Text>
-                </View>
-              ))}
-
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Prérequis</Text>
-              {course.requirements.map((item, i) => (
-                <View key={i} style={styles.learnRow}>
-                  <Ionicons name="ellipse" size={6} color={theme.colors.textMuted} style={{ marginTop: 7 }} />
-                  <Text style={[styles.learnText, { color: theme.colors.textSecondary }]}>{item}</Text>
-                </View>
-              ))}
-
-              {FEATURES.pdfLibrary && (
-                <Pressable
-                  onPress={() => navigation.navigate('PdfLibrary', { courseId: course.id })}
-                  style={[styles.pdfRow, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}
-                >
-                  <Ionicons name="document-text-outline" size={22} color={theme.colors.danger} />
-                  <Text style={[styles.pdfText, { color: theme.colors.text }]}>{course.pdfs.length} supports PDF disponibles</Text>
-                  <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
-                </Pressable>
-              )}
-
-              <Text style={[styles.updatedText, { color: theme.colors.textMuted }]}>Dernière mise à jour le {formatDate(course.lastUpdated)}</Text>
-            </Animated.View>
+          {!!course.description && (
+            <Text numberOfLines={3} style={[styles.description, { color: theme.colors.textSecondary }]}>{course.description}</Text>
           )}
 
-          {tab === 'curriculum' && (
-            <Animated.View entering={FadeInDown.duration(220)}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                {course.lessons.length} leçons · {formatDuration(course.durationHours)} au total
-              </Text>
-              {course.lessons.map((lesson, i) => (
-                <View key={lesson.id} style={[styles.lessonRow, { borderBottomColor: theme.colors.border }]}>
-                  <Pressable
-                    onPress={() => (owned || lesson.isPreview) && navigation.navigate('VideoPlayer', { courseId: course.id, lessonId: lesson.id })}
-                    style={styles.lessonRowMain}
-                  >
-                    <View style={[styles.lessonIndex, { backgroundColor: theme.colors.primarySoft }]}>
-                      <Text style={{ color: theme.colors.primary, fontWeight: '700', fontSize: 12 }}>{i + 1}</Text>
-                    </View>
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={[styles.lessonTitle, { color: theme.colors.text }]}>{lesson.title}</Text>
-                      <Text style={[styles.lessonMeta, { color: theme.colors.textMuted }]}>{lesson.durationMinutes} min</Text>
-                    </View>
-                    {owned || lesson.isPreview ? (
-                      <Ionicons name="play-circle-outline" size={22} color={theme.colors.primary} />
-                    ) : (
-                      <Ionicons name="lock-closed-outline" size={18} color={theme.colors.textMuted} />
-                    )}
-                  </Pressable>
-                  {lesson.pdfUri && (owned || lesson.isPreview) && (
-                    <Pressable style={[styles.lessonPdfBtn, { backgroundColor: theme.colors.dangerLight }]}>
-                      <Ionicons name="document-text-outline" size={14} color={theme.colors.danger} />
-                      <Text style={[styles.lessonPdfText, { color: theme.colors.danger }]} numberOfLines={1}>
-                        {lesson.pdfTitle || 'Support PDF'}
-                      </Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{course.lessons.length} leçons</Text>
+          {course.lessons.map((lesson, i) => {
+            const open = owned || lesson.isPreview;
+            const canPdf = !!lesson.pdfUri && open && isStudentStack && !course.isLocked && course.contentType !== 'video';
+            return (
+              <View key={lesson.id} style={[styles.lessonRow, { borderBottomColor: theme.colors.border }]}>
+                <Pressable
+                  onPress={() => open && navigation.navigate('VideoPlayer', { courseId: course.id, lessonId: lesson.id })}
+                  style={styles.lessonRowMain}
+                >
+                  <View style={[styles.lessonIndex, { backgroundColor: theme.colors.primarySoft }]}>
+                    <Text style={{ color: theme.colors.primary, fontWeight: '700', fontSize: 12 }}>{i + 1}</Text>
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={[styles.lessonTitle, { color: theme.colors.text }]} numberOfLines={1}>{lesson.title}</Text>
+                    <Text style={[styles.lessonMeta, { color: theme.colors.textMuted }]}>{lesson.durationMinutes} min</Text>
+                  </View>
+                  {canPdf && (
+                    <Pressable
+                      hitSlop={8}
+                      onPress={() => navigation.navigate('PdfViewer', { courseId: course.id, lessonId: lesson.id, uri: lesson.pdfUri!, title: lesson.pdfTitle || lesson.title })}
+                      style={styles.pdfIcon}
+                    >
+                      <Ionicons name="document-text-outline" size={20} color={theme.colors.primary} />
                     </Pressable>
                   )}
-                </View>
-              ))}
-            </Animated.View>
-          )}
-
-          {tab === 'reviews' && (
-            <Animated.View entering={FadeInDown.duration(220)}>
-              <View style={[styles.ratingSummary, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
-                <Text style={[styles.ratingBig, { color: theme.colors.text }]}>{course.rating.toFixed(1)}</Text>
-                <RatingStars rating={course.rating} showValue={false} size={16} />
-                <Text style={[styles.ratingCountText, { color: theme.colors.textMuted }]}>{course.ratingCount.toLocaleString('fr-FR')} avis</Text>
+                  <Ionicons name={open ? 'play-circle-outline' : 'lock-closed-outline'} size={open ? 22 : 18} color={open ? theme.colors.primary : theme.colors.textMuted} />
+                </Pressable>
               </View>
-              {reviews.map((r) => (
-                <ReviewItem key={r.id} review={r} />
-              ))}
-            </Animated.View>
-          )}
+            );
+          })}
         </View>
       </ScrollView>
 
       <Animated.View entering={FadeInUp.delay(200).springify()} style={[styles.footer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border }]}>
-        {owned ? (
-          <Button label="Continuer le cours" icon="play" onPress={() => navigation.navigate('VideoPlayer', { courseId: course.id })} />
-        ) : (
+        {!isStudentStack ? (
+          <Button label="Aperçu professeur" icon="eye-outline" variant="outline" disabled />
+        ) : owned ? (
+          course.isLocked ? (
+            <Button label={course.unlockDate ? `Disponible le ${formatDate(course.unlockDate)}` : 'Bientôt disponible'} icon="lock-closed" disabled />
+          ) : (
+            <Button label="Continuer le cours" icon="play" onPress={() => navigation.navigate('VideoPlayer', { courseId: course.id })} />
+          )
+        ) : pending ? (
+          <Button label="Paiement en cours de validation" icon="hourglass-outline" variant="outline" disabled />
+        ) : course.isFree ? (
           <>
             <View style={{ marginRight: 14 }}>
+              <Text style={[styles.footerPrice, { color: theme.colors.primary }]}>Gratuit</Text>
+              <Text style={[styles.footerOldPrice, { color: theme.colors.textMuted }]}>{formatPrice(course.price)}</Text>
+            </View>
+            <Button label="Obtenir gratuitement" icon="gift" loading={claiming} onPress={claimFree} fullWidth={false} style={{ flex: 1 }} />
+          </>
+        ) : (
+          <>
+            <View style={{ marginRight: 10 }}>
               <Text style={[styles.footerPrice, { color: theme.colors.text }]}>{formatPrice(course.price)}</Text>
-              {course.originalPrice && (
+              {!!course.originalPrice && (
                 <Text style={[styles.footerOldPrice, { color: theme.colors.textMuted }]}>{formatPrice(course.originalPrice)}</Text>
               )}
             </View>
-            <Button
-              label={inCart ? 'Voir le panier' : 'Ajouter au panier'}
+            <IconButton
               icon={inCart ? 'cart' : 'cart-outline'}
-              onPress={() => (inCart ? navigation.navigate('Cart') : addToCart(course))}
+              variant="outline"
+              size={50}
+              color={theme.colors.primary}
+              onPress={() => {
+                haptics.tap();
+                inCart ? navigation.navigate('Cart') : addToCart(course);
+              }}
+              style={{ marginRight: 10 }}
+            />
+            <Button
+              label="Acheter"
+              icon="flash"
+              onPress={() => navigation.navigate('Payment', { offer: 'single', courseIds: [course.id], title: course.title })}
               fullWidth={false}
               style={{ flex: 1 }}
             />
@@ -232,13 +218,15 @@ export const CourseDetailScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  hero: { width: '100%', height: 240 },
+  hero: { width: '100%', height: 280 },
   heroOverlayTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 90 },
   heroTopBar: { position: 'absolute', top: 50, left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },
-  playOverlay: { position: 'absolute', top: 0, left: 0, right: 0, height: 240, alignItems: 'center', justifyContent: 'center' },
+  playOverlay: { position: 'absolute', top: 0, left: 0, right: 0, height: 280, alignItems: 'center', justifyContent: 'center' },
   playCircle: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
   content: { padding: 20 },
-  badgeRow: { flexDirection: 'row', marginBottom: 12 },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
+  lockBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, padding: 12, marginBottom: 14 },
+  lockBannerText: { flex: 1, fontSize: 12.5, lineHeight: 18, fontWeight: '600' },
   title: { fontSize: 21, fontWeight: '700', marginBottom: 8, lineHeight: 28 },
   subtitle: { fontSize: 14, lineHeight: 20, marginBottom: 12 },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
@@ -251,6 +239,7 @@ const styles = StyleSheet.create({
   description: { fontSize: 13.5, lineHeight: 21, marginBottom: 8 },
   learnRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
   learnText: { fontSize: 13.5, marginLeft: 10, flex: 1, lineHeight: 19 },
+  pdfIcon: { padding: 4, marginRight: 8 },
   pdfRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, marginTop: 12, marginBottom: 12 },
   pdfText: { flex: 1, marginLeft: 12, fontSize: 13.5, fontWeight: '700' },
   updatedText: { fontSize: 11.5, marginTop: 6 },

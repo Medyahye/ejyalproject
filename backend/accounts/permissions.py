@@ -17,9 +17,22 @@ class IsCourseOwnerOrReadOnly(BasePermission):
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
             return True
-        return bool(request.user and request.user.is_authenticated and request.user.is_teacher)
+        user = request.user
+        return bool(user and user.is_authenticated and (user.is_teacher or user.is_staff_member))
 
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True
-        return obj.teacher_id == request.user.id
+        return request.user.is_staff_member or obj.teacher_id == request.user.id
+
+
+class IsStaffMember(BasePermission):
+    """Admins and the director: access to everything."""
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_staff_member)
+
+
+class IsDirector(BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_director)

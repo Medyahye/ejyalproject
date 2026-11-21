@@ -26,18 +26,40 @@ class UserSerializer(serializers.ModelSerializer):
     gradeTrack = serializers.CharField(source='grade_track', required=False, allow_blank=True)
     teachingCategoryIds = serializers.PrimaryKeyRelatedField(source='teaching_categories', many=True, read_only=True)
 
+    # Teacher business terms
+    revenueShare = serializers.DecimalField(source='revenue_share', max_digits=5, decimal_places=2, coerce_to_string=False, read_only=True)
+    earnings = serializers.SerializerMethodField()
+    packsClosed = serializers.BooleanField(source='packs_closed', read_only=True)
+    promoFreeUntil = serializers.DateField(source='promo_free_until', read_only=True)
+    favoriteTeacherIds = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
             'id', 'fullName', 'email', 'avatar', 'role', 'bio', 'createdAt',
-            'enrolledCourseIds', 'favoriteCourseIds', 'purchasedCourseIds', 'gradeTrack',
+            'enrolledCourseIds', 'favoriteCourseIds', 'purchasedCourseIds', 'gradeTrack', 'favoriteTeacherIds',
             'headline', 'courseIds', 'totalStudents', 'totalRevenue', 'rating', 'specialties', 'teachingCategoryIds',
+            'revenueShare', 'earnings', 'packsClosed', 'promoFreeUntil',
         ]
+
+    STUDENT_FIELDS = ('enrolledCourseIds', 'favoriteCourseIds', 'purchasedCourseIds', 'gradeTrack', 'favoriteTeacherIds')
+    TEACHER_FIELDS = ('headline', 'courseIds', 'totalStudents', 'totalRevenue', 'rating', 'specialties', 'teachingCategoryIds',
+                      'revenueShare', 'earnings', 'packsClosed', 'promoFreeUntil')
+
+    def get_favoriteTeacherIds(self, obj):
+        if not obj.is_student:
+            return None
+        return [str(i) for i in obj.favorite_teachers.values_list('teacher_id', flat=True)]
+
+    def get_earnings(self, obj):
+        if not obj.is_teacher:
+            return None
+        return round(self.get_totalRevenue(obj) * float(obj.revenue_share) / 100, 2)
 
     def get_enrolledCourseIds(self, obj):
         if not obj.is_student:
             return None
-        return list(obj.enrollments.values_list('course_id', flat=True))
+        return list(obj.enrollments.filter(status='active').values_list('course_id', flat=True))
 
     def get_favoriteCourseIds(self, obj):
         if not obj.is_student:
@@ -47,7 +69,7 @@ class UserSerializer(serializers.ModelSerializer):
     def get_purchasedCourseIds(self, obj):
         if not obj.is_student:
             return None
-        return list(obj.enrollments.values_list('course_id', flat=True))
+        return list(obj.enrollments.filter(status='active').values_list('course_id', flat=True))
 
     def get_courseIds(self, obj):
         if not obj.is_teacher:
@@ -58,7 +80,7 @@ class UserSerializer(serializers.ModelSerializer):
         if not obj.is_teacher:
             return None
         from commerce.models import Enrollment
-        return Enrollment.objects.filter(course__teacher_id=obj.id).values('student_id').distinct().count()
+        return Enrollment.objects.filter(course__teacher_id=obj.id, status='active').values('student_id').distinct().count()
 
     def get_totalRevenue(self, obj):
         if not obj.is_teacher:
@@ -77,13 +99,42 @@ class UserSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        drop = ()
         if instance.is_student:
-            for field in ('headline', 'courseIds', 'totalStudents', 'totalRevenue', 'rating', 'specialties', 'teachingCategoryIds'):
-                data.pop(field, None)
+            drop = self.TEACHER_FIELDS
+        elif instance.is_teacher:
+            drop = self.STUDENT_FIELDS
         else:
-            for field in ('enrolledCourseIds', 'favoriteCourseIds', 'purchasedCourseIds', 'gradeTrack'):
-                data.pop(field, None)
+            drop = self.STUDENT_FIELDS + self.TEACHER_FIELDS
+        for field in drop:
+            data.pop(field, None)
         return data
+
+
+class PublicTeacherSerializer(serializers.ModelSerializer):
+    """What a student sees of a teacher (fenêtre des professeurs)."""
+
+    fullName = serializers.CharField(source='full_name')
+    courseCount = serializers.IntegerField(read_only=True)
+    totalStudents = serializers.IntegerField(read_only=True)
+    rating = serializers.SerializerMethodField()
+    teachingCategoryIds = serializers.PrimaryKeyRelatedField(source='teaching_categories', many=True, read_only=True)
+    promoFreeUntil = serializers.DateField(source='promo_free_until', read_only=True)
+    isPromoActive = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'fullName', 'avatar', 'headline', 'bio', 'specialties', 'courseCount', 'totalStudents',
+                  'rating', 'teachingCategoryIds', 'promoFreeUntil', 'isPromoActive']
+
+    def get_rating(self, obj):
+        from django.db.models import Avg
+        avg = obj.courses.filter(rating_count__gt=0).aggregate(avg=Avg('rating'))['avg']
+        return round(float(avg or 0), 1)
+
+    def get_isPromoActive(self, obj):
+        from django.utils import timezone
+        return bool(obj.promo_free_until and obj.promo_free_until >= timezone.localdate())
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -98,6 +149,13 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['fullName', 'email', 'password', 'role', 'gradeTrack', 'headline', 'teachingCategoryIds']
+
+    def validate_role(self, value):
+        # Only students sign up from the app; teacher, admin and director accounts are
+        # created by the director (see staff API).
+        if value != User.Role.STUDENT:
+            raise serializers.ValidationError("Seuls les élèves peuvent créer un compte depuis l'application.")
+        return value
 
     def create(self, validated_data):
         teaching_categories = validated_data.pop('teaching_categories', None)

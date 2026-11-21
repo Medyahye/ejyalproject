@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, ScrollView, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { StudentTabScreenProps } from '../../navigation/types';
 import { useTheme } from '../../theme';
@@ -12,31 +12,35 @@ import { useCatalog } from '../../context/CatalogContext';
 import { useLive } from '../../context/LiveContext';
 import { ScreenContainer } from '../../components/layout';
 import { SectionHeader, IconButton, EmptyState, Avatar, PulsingDot, SwipeToDismiss } from '../../components/ui';
-import { CourseCard } from '../../components/course';
+import { CourseCard, TeacherSquares } from '../../components/course';
 import { CourseCardSkeleton } from '../../components/ui/Skeleton';
-import { Student, GradeTrack } from '../../types';
-import { GRADE_TRACKS, getGradeTrackInfo } from '../../constants/gradeTracks';
+import { GradeTrackSheet } from '../../components/student/GradeTrackSheet';
+import { Student, GradeTrack, OfferType } from '../../types';
+import { LEVELS, getLevelInfo } from '../../constants/levels';
+import { OFFERS, buildBundle, offerCourses, coursesForTrack } from '../../constants/offers';
 import { FEATURES } from '../../constants/features';
 import { haptics } from '../../utils/haptics';
-import { SwipeToDismissHandle } from '../../components/ui/SwipeToDismiss';
+import { formatPrice } from '../../utils/formatters';
+import { SectionTitle } from '../../components/ui/Tag';
 
 type Props = StudentTabScreenProps<'Home'>;
 
 export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
+  const { width } = useWindowDimensions();
   const { user, updateProfile } = useAuth();
   const student = user as Student;
-  const { isFavorite, toggleFavorite, refresh } = useStudentData();
-  const { courses, loading } = useCatalog();
+  const { isFavorite, toggleFavorite, isFavoriteTeacher, toggleFavoriteTeacher, isPurchased, cartItems, refresh } = useStudentData();
+  const { courses, teachers, terms, loading, getTrack, currentTerm } = useCatalog();
   const { liveSessions, refresh: refreshLive } = useLive();
   const liveNow = liveSessions.find((l) => l.status === 'live');
   const [refreshing, setRefreshing] = useState(false);
   const [dismissedLiveId, setDismissedLiveId] = useState<string | null>(null);
-  const liveSwipeRef = useRef<SwipeToDismissHandle>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [term, setTerm] = useState<number | null>(null);
   const showLiveBanner = FEATURES.live && !!liveNow && liveNow.id !== dismissedLiveId;
+  const { tracks } = useCatalog();
 
-  // Poll while Home is focused so a newly-started live shows up on its own —
-  // no push notifications yet, but the banner appears within ~20s without any manual refresh.
   useFocusEffect(
     useCallback(() => {
       if (!FEATURES.live) return;
@@ -52,234 +56,318 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
     await refresh().catch(() => {});
     setRefreshing(false);
   };
-  const trackInfo = FEATURES.gradeTrack ? getGradeTrackInfo(student?.gradeTrack) : undefined;
 
-  const handleTrackPress = (track: GradeTrack) => {
-    haptics.select();
-    if (student?.gradeTrack !== track) {
-      updateProfile({ gradeTrack: track } as Partial<Student>);
-    }
-    navigation.navigate('TrackSubjects', { track });
+  const track = getTrack(student?.gradeTrack);
+  const level = getLevelInfo(track?.level);
+  const activeTerm = term ?? currentTerm?.number ?? 1;
+
+  const handleSelectTrack = (id: GradeTrack) => {
+    haptics.success();
+    setSheetOpen(false);
+    if (student?.gradeTrack !== id) updateProfile({ gradeTrack: id } as Partial<Student>);
   };
 
-  // Packages published for the student's own track — a direct filter, not a fuzzy ranking.
-  const trackPackages = useMemo(() => {
-    if (!student?.gradeTrack) return [];
-    return courses.filter((c) => c.gradeTracks.includes(student.gradeTrack as GradeTrack));
-  }, [courses, student?.gradeTrack]);
-  const firstName = student?.fullName?.split(' ')[0] ?? 'Étudiant';
+  const trackCourses = useMemo(() => coursesForTrack(courses, track), [courses, track]);
+  const termCourses = useMemo(() => trackCourses.filter((c) => c.term === activeTerm), [trackCourses, activeTerm]);
+  const freeCourses = useMemo(() => {
+    const free = courses.filter((c) => c.isFree && !c.isClosed && !isPurchased(c.id));
+    // Courses for the student's class first.
+    return free.sort((a, b) => Number(track ? b.gradeTracks.includes(track.id) : 0) - Number(track ? a.gradeTracks.includes(track.id) : 0));
+  }, [courses, track, isPurchased]);
+  const sortedTeachers = useMemo(() => {
+    const rank = (id: string) => (isFavoriteTeacher(id) ? 0 : 1);
+    return [...teachers].sort((a, b) => rank(a.id) - rank(b.id));
+  }, [teachers, isFavoriteTeacher]);
+
+  const offerCards = useMemo(
+    () =>
+      (['full', 'main', 'secondary'] as OfferType[]).map((offer) => ({
+        offer,
+        bundle: buildBundle(offer, offerCourses(offer, courses, track), isPurchased),
+      })),
+    [courses, track, isPurchased]
+  );
+
 
   return (
     <View style={{ flex: 1 }}>
-    <ScreenContainer scroll edges={['top']} refreshing={refreshing} onRefresh={handleRefresh}>
-      <Animated.View entering={FadeInDown.delay(40).springify()} style={styles.header}>
-        <View>
-          <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>Bonjour {firstName} 👋</Text>
-          <Text style={[styles.heading, { color: theme.colors.text }]}>Que voulez-vous apprendre ?</Text>
-        </View>
-        <IconButton icon="notifications-outline" onPress={() => {}} />
-      </Animated.View>
-
-      <Animated.View entering={FadeInDown.delay(100).springify()}>
-        <Pressable onPress={() => navigation.navigate('Search')} style={[styles.searchBar, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
-          <Ionicons name="search" size={18} color={theme.colors.textMuted} />
-          <Text style={[styles.searchPlaceholder, { color: theme.colors.textMuted }]}>Rechercher un cours, un formateur...</Text>
-        </Pressable>
-      </Animated.View>
-
-      {showLiveBanner && liveNow && (
-        <Animated.View key={liveNow.id} entering={ZoomIn.springify().damping(14)}>
-          <SwipeToDismiss ref={liveSwipeRef} marginBottom={22} onDismissed={() => setDismissedLiveId(liveNow.id)}>
-            <Pressable onPress={() => navigation.navigate('LiveRoom', { liveId: liveNow.id })}>
-              <LinearGradient colors={liveNow.coverGradient} style={styles.liveBanner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                <View style={styles.liveTopRow}>
-                  <View style={styles.liveDotRow}>
-                    <PulsingDot size={7} color="#fff" style={{ marginRight: 6 }} />
-                    <Text style={styles.liveBadgeText}>EN DIRECT MAINTENANT</Text>
-                  </View>
-                  <View style={styles.liveDotRow}>
-                    <View style={styles.liveViewersPill}>
-                      <Ionicons name="eye" size={12} color="#fff" />
-                      <Text style={styles.liveViewersText}>{liveNow.viewersCount}</Text>
-                    </View>
-                    <Pressable
-                      hitSlop={10}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        haptics.tap();
-                        liveSwipeRef.current?.dismiss();
-                      }}
-                      style={styles.liveCloseBtn}
-                    >
-                      <Ionicons name="close" size={13} color="#fff" />
-                    </Pressable>
-                  </View>
-                </View>
-
-                <View style={styles.liveMainRow}>
-                  <Avatar uri={liveNow.teacherAvatar} size={44} ring />
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={styles.liveTitle} numberOfLines={1}>{liveNow.title}</Text>
-                    <Text style={styles.liveSubtitle} numberOfLines={1}>{liveNow.teacherName} · {liveNow.categoryName}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.liveJoinBtn}>
-                  <Text style={styles.liveJoinText}>Rejoindre le direct</Text>
-                  <Ionicons name="arrow-forward" size={15} color="#fff" />
-                </View>
-              </LinearGradient>
-            </Pressable>
-          </SwipeToDismiss>
-        </Animated.View>
-      )}
-
-      {FEATURES.gradeTrack && (
-        <Animated.View entering={FadeInDown.delay(130).springify()} style={{ marginBottom: 24 }}>
-          <View style={styles.trackHeaderRow}>
-            <View>
-              <Text style={[styles.trackHeaderTitle, { color: theme.colors.text }]}>Ta filière</Text>
-              <Text style={[styles.trackHeaderSubtitle, { color: theme.colors.textMuted }]}>
-                {trackInfo ? `Cours personnalisés pour ${trackInfo.shortLabel}` : 'Choisis-la pour des recommandations adaptées'}
-              </Text>
-            </View>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.trackScrollContent}>
-            {GRADE_TRACKS.map((track, i) => {
-              const selected = student?.gradeTrack === track.id;
-              return (
-                <Animated.View key={track.id} entering={FadeInRight.delay(160 + Math.min(i, 6) * 45).springify()}>
-                  <Pressable
-                    onPress={() => handleTrackPress(track.id)}
-                    style={[
-                      styles.trackTile,
-                      { backgroundColor: track.color },
-                      selected ? { ...theme.shadow('md'), transform: [{ scale: 1.04 }] } : { opacity: 0.9 },
-                    ]}
-                  >
-                    {selected && (
-                      <View style={styles.trackTileCheck}>
-                        <Ionicons name="checkmark" size={14} color={track.color} />
-                      </View>
-                    )}
-                    <Text style={styles.trackTileCode}>{track.code}</Text>
-                    <Text style={styles.trackTileLabel} numberOfLines={1}>{track.shortLabel}</Text>
-                  </Pressable>
-                </Animated.View>
-              );
-            })}
-          </ScrollView>
-        </Animated.View>
-      )}
-
-      <Animated.View entering={FadeInDown.delay(240).springify()}>
-        <SectionHeader
-          title={trackInfo ? `Programme ${trackInfo.shortLabel}` : 'Packages disponibles'}
-          subtitle={trackInfo ? 'Les cours pensés pour ta filière' : 'Choisis ta filière ci-dessus'}
-          onAction={() => navigation.navigate('Explore')}
-        />
-        {!student?.gradeTrack ? (
-          <EmptyState
-            icon="albums-outline"
-            title="Choisis ta filière"
-            description="Sélectionne ta filière ci-dessus pour voir les packages disponibles pour ton programme."
-          />
-        ) : loading ? (
-          <FlatList
-            horizontal
-            data={[1, 2, 3]}
-            keyExtractor={(i) => String(i)}
-            showsHorizontalScrollIndicator={false}
-            renderItem={() => <CourseCardSkeleton />}
-            style={{ marginBottom: 12 }}
-          />
-        ) : trackPackages.length === 0 ? (
-          <EmptyState
-            icon="albums-outline"
-            title="Aucun package pour l'instant"
-            description={`Aucun cours n'est encore disponible pour ${trackInfo?.shortLabel}. Reviens bientôt !`}
-          />
-        ) : (
-          <FlatList
-            horizontal
-            data={trackPackages}
-            keyExtractor={(c) => c.id}
-            showsHorizontalScrollIndicator={false}
-            style={{ marginBottom: 12 }}
-            renderItem={({ item, index }) => (
-              <Animated.View entering={FadeInRight.delay(260 + Math.min(index, 6) * 50).springify()}>
-                <CourseCard
-                  course={item}
-                  isFavorite={isFavorite(item.id)}
-                  onToggleFavorite={() => toggleFavorite(item.id)}
-                  onPress={() => navigation.navigate('CourseDetail', { courseId: item.id })}
-                />
-              </Animated.View>
+      <ScreenContainer scroll edges={['top']} refreshing={refreshing} onRefresh={handleRefresh}>
+        <Animated.View entering={FadeInDown.delay(40).springify()} style={styles.searchRow}>
+          <Pressable onPress={() => navigation.navigate('Search')} style={[styles.searchBar, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+            <Ionicons name="search" size={18} color={theme.colors.textMuted} />
+            <Text style={[styles.searchPlaceholder, { color: theme.colors.textMuted }]}>Un cours, une matière, un prof…</Text>
+          </Pressable>
+          <Pressable onPress={() => navigation.navigate('Cart')} style={[styles.cartBtn, { backgroundColor: theme.colors.card, ...theme.shadow('sm') }]}>
+            <Ionicons name="bag-handle-outline" size={21} color={theme.colors.text} />
+            {cartItems.length > 0 && (
+              <View style={[styles.cartBadge, { backgroundColor: theme.colors.danger }]}>
+                <Text style={styles.cartBadgeText}>{cartItems.length}</Text>
+              </View>
             )}
+          </Pressable>
+        </Animated.View>
+
+        {/* Les profs en grand, juste sous la recherche */}
+        <Animated.View entering={FadeInDown.delay(90).springify()} style={{ marginBottom: 22 }}>
+          <SectionTitle
+            title="Nos professeurs"
+            right={
+              <Pressable onPress={() => navigation.navigate('Teachers')} hitSlop={8} style={[styles.row, { marginTop: 6 }]}>
+                <Text style={[styles.seeAll, { color: theme.colors.primary }]}>Voir tout</Text>
+                <Ionicons name="chevron-forward" size={15} color={theme.colors.primary} />
+              </Pressable>
+            }
           />
+          <TeacherSquares
+            teachers={sortedTeachers}
+            isFavorite={isFavoriteTeacher}
+            onToggleFavorite={toggleFavoriteTeacher}
+            onPress={(id) => navigation.navigate('TeacherProfile', { teacherId: id })}
+          />
+        </Animated.View>
+
+        {showLiveBanner && liveNow && (
+          <Animated.View key={liveNow.id} entering={FadeIn.duration(350)} exiting={FadeOut.duration(200)} style={{ marginBottom: 18 }}>
+            <Pressable
+              onPress={() => navigation.navigate('LiveRoom', { liveId: liveNow.id })}
+              style={({ pressed }) => [styles.liveBar, { backgroundColor: theme.colors.card, opacity: pressed ? 0.85 : 1, ...theme.shadow('sm') }]}
+            >
+              <Avatar uri={liveNow.teacherAvatar} size={36} />
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <View style={styles.row}>
+                  <PulsingDot size={6} color={theme.colors.danger} style={{ marginRight: 5 }} />
+                  <Text style={[styles.liveBadgeText, { color: theme.colors.danger }]}>En direct</Text>
+                  <Text style={[styles.liveViewers, { color: theme.colors.textMuted }]}> · {liveNow.viewersCount} spectateurs</Text>
+                </View>
+                <Text style={[styles.liveTitle, { color: theme.colors.text }]} numberOfLines={1}>{liveNow.title}</Text>
+              </View>
+              <Pressable
+                hitSlop={12}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  haptics.tap();
+                  setDismissedLiveId(liveNow.id);
+                }}
+                style={styles.liveClose}
+              >
+                <Ionicons name="close" size={16} color={theme.colors.textMuted} />
+              </Pressable>
+            </Pressable>
+          </Animated.View>
         )}
-      </Animated.View>
-    </ScreenContainer>
+
+        {/* Pas encore de classe : on la choisit ici. Ensuite elle se change dans Profil → Ma classe. */}
+        {!track && (
+          <Animated.View entering={FadeInDown.delay(130).springify()} style={{ marginBottom: 26 }}>
+              <SectionTitle title="Ton niveau" />
+              <View style={styles.levelGrid}>
+                {LEVELS.map((l, i) => (
+                  <Animated.View key={l.id} entering={FadeInDown.delay(160 + i * 50).springify()} style={styles.levelCell}>
+                    <Pressable onPress={() => setSheetOpen(true)} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+                      <LinearGradient colors={l.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.levelTile}>
+                        <Ionicons name={l.icon} size={26} color="#fff" />
+                        <View>
+                          <Text style={styles.levelLabel}>{l.label}</Text>
+                          <Text style={styles.levelSub}>{l.subtitle}</Text>
+                        </View>
+                      </LinearGradient>
+                    </Pressable>
+                  </Animated.View>
+                ))}
+              </View>
+          </Animated.View>
+        )}
+
+        {/* Les 4 choix de l'étudiant — seulement si sa classe a déjà des cours */}
+        {track && trackCourses.length > 0 && (
+          <Animated.View entering={FadeInDown.delay(180).springify()} style={{ marginBottom: 26 }}>
+            <SectionTitle title="Les offres" />
+            <View style={styles.offerGrid}>
+              {offerCards.filter(({ bundle }) => bundle.courses.length > 0).map(({ offer, bundle }, i) => {
+                const info = OFFERS[offer as Exclude<OfferType, 'single'>];
+                const empty = bundle.courses.length === 0;
+                return (
+                  <Animated.View key={offer} entering={FadeInDown.delay(200 + i * 50).springify()} style={styles.offerCell}>
+                    <Pressable
+                      disabled={empty}
+                      onPress={() => navigation.navigate('Offer', { offer })}
+                      style={({ pressed }) => [styles.offerCard, { backgroundColor: theme.colors.card, opacity: empty ? 0.5 : 1, transform: [{ scale: pressed ? 0.97 : 1 }], ...theme.shadow('sm') }]}
+                    >
+                      <LinearGradient colors={info.gradient} style={styles.offerIcon}>
+                        <Ionicons name={info.icon} size={20} color="#fff" />
+                      </LinearGradient>
+                      {info.discount > 0 && bundle.toBuy.length > 1 && (
+                        <View style={[styles.discount, { backgroundColor: theme.colors.primarySoft }]}>
+                          <Text style={[styles.discountText, { color: theme.colors.primary }]}>-{Math.round(info.discount * 100)}%</Text>
+                        </View>
+                      )}
+                      <Text style={[styles.offerTitle, { color: theme.colors.text }]}>{info.label}</Text>
+                      <Text style={[styles.offerPrice, { color: theme.colors.text }]}>
+                        {bundle.toBuy.length === 0 ? 'Déjà à toi' : formatPrice(bundle.price)}
+                      </Text>
+                    </Pressable>
+                  </Animated.View>
+                );
+              })}
+              <Animated.View entering={FadeInDown.delay(350).springify()} style={styles.offerCell}>
+                <Pressable
+                  onPress={() => navigation.navigate('Teachers')}
+                  style={({ pressed }) => [styles.offerCard, { backgroundColor: theme.colors.card, transform: [{ scale: pressed ? 0.97 : 1 }], ...theme.shadow('sm') }]}
+                >
+                  <LinearGradient colors={OFFERS.teacher.gradient} style={styles.offerIcon}>
+                    <Ionicons name={OFFERS.teacher.icon} size={20} color="#fff" />
+                  </LinearGradient>
+                  <Text style={[styles.offerTitle, { color: theme.colors.text }]}>{OFFERS.teacher.label}</Text>
+                  <View style={styles.faces}>
+                    {teachers.slice(0, 4).map((t, idx) => (
+                      <View key={t.id} style={{ marginLeft: idx === 0 ? 0 : -9 }}>
+                        <Avatar uri={t.avatar} size={26} ring />
+                      </View>
+                    ))}
+                  </View>
+                </Pressable>
+              </Animated.View>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Promos gratuites */}
+        {freeCourses.length > 0 && (
+          <Animated.View entering={FadeInDown.delay(220).springify()} style={{ marginBottom: 14 }}>
+            <SectionTitle title="Cours offerts" />
+            <FlatList
+              horizontal
+              data={freeCourses}
+              keyExtractor={(c) => c.id}
+              showsHorizontalScrollIndicator={false}
+              style={styles.bleed}
+              contentContainerStyle={styles.bleedContent}
+              renderItem={({ item, index }) => (
+                <Animated.View entering={FadeInRight.delay(240 + Math.min(index, 5) * 50).springify()}>
+                  <CourseCard
+                    course={item}
+                    width={Math.min(270, width * 0.7)}
+                    isFavorite={isFavorite(item.id)}
+                    onToggleFavorite={() => toggleFavorite(item.id)}
+                    onPress={() => navigation.navigate('CourseDetail', { courseId: item.id })}
+                  />
+                </Animated.View>
+              )}
+            />
+          </Animated.View>
+        )}
+
+        {track && !loading && trackCourses.length === 0 && (
+          <EmptyState icon="time-outline" title={`Les cours de ${track.shortLabel} arrivent bientôt`} />
+        )}
+
+        {/* Packs par trimestre */}
+        {track && trackCourses.length > 0 && (
+          <Animated.View entering={FadeInDown.delay(300).springify()}>
+            <SectionTitle title={`Packs ${track.shortLabel}`} />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 14 }}>
+              {terms.map((t) => {
+                const active = t.number === activeTerm;
+                return (
+                  <Pressable
+                    key={t.number}
+                    onPress={() => {
+                      haptics.select();
+                      setTerm(t.number);
+                    }}
+                    style={[styles.termChip, { backgroundColor: active ? theme.colors.text : theme.colors.card, borderColor: active ? theme.colors.text : theme.colors.border }]}
+                  >
+                    {!t.isStarted && <Ionicons name="lock-closed" size={12} color={active ? theme.colors.background : theme.colors.textMuted} />}
+                    <Text style={[styles.termChipText, { color: active ? theme.colors.background : theme.colors.text }]}>{t.label}</Text>
+                    {t.isCurrent && <View style={[styles.nowDot, { backgroundColor: theme.colors.primary }]} />}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            {loading ? (
+              <FlatList horizontal data={[1, 2]} keyExtractor={(i) => String(i)} showsHorizontalScrollIndicator={false} renderItem={() => <CourseCardSkeleton />} />
+            ) : termCourses.length === 0 ? (
+              <EmptyState icon="calendar-outline" title="Rien pour ce trimestre" />
+            ) : (
+              <FlatList
+                horizontal
+                data={termCourses}
+                keyExtractor={(c) => c.id}
+                showsHorizontalScrollIndicator={false}
+                style={styles.bleed}
+                contentContainerStyle={styles.bleedContent}
+                renderItem={({ item, index }) => (
+                  <Animated.View entering={FadeInRight.delay(Math.min(index, 5) * 50).springify()}>
+                    <CourseCard
+                      course={item}
+                      width={Math.min(270, width * 0.7)}
+                      isFavorite={isFavorite(item.id)}
+                      onToggleFavorite={() => toggleFavorite(item.id)}
+                      onPress={() => navigation.navigate('CourseDetail', { courseId: item.id })}
+                    />
+                  </Animated.View>
+                )}
+              />
+            )}
+          </Animated.View>
+        )}
+      </ScreenContainer>
+
+      <GradeTrackSheet
+        visible={sheetOpen}
+        tracks={tracks}
+        currentTrack={student?.gradeTrack}
+        onSelect={handleSelectTrack}
+        onClose={() => setSheetOpen(false)}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 22, marginTop: 24 },
-  greeting: { fontSize: 15, fontWeight: '600', marginBottom: 5 },
-  heading: { fontSize: 24, fontWeight: '700', maxWidth: 260 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, paddingHorizontal: 16, height: 52, marginBottom: 20 },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14, marginBottom: 18 },
+  cartBtn: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  squaresHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  squaresTitle: { fontSize: 20.5, fontWeight: '800' },
+  seeAll: { fontSize: 13.5, fontWeight: '700', marginRight: 2 },
+  cartBadge: { position: 'absolute', top: -3, right: -3, minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  cartBadgeText: { color: '#fff', fontSize: 10.5, fontWeight: '800' },
+  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', borderRadius: 16, paddingHorizontal: 16, height: 52 },
   searchPlaceholder: { marginLeft: 10, fontSize: 14.5 },
-  trackHeaderRow: { marginBottom: 12 },
-  trackHeaderTitle: { fontSize: 16.5, fontWeight: '700' },
-  trackHeaderSubtitle: { fontSize: 13, marginTop: 3 },
-  trackScrollContent: { paddingRight: 8 },
-  trackTile: {
-    width: 140,
-    height: 140,
-    borderRadius: 24,
-    padding: 12,
-    marginRight: 12,
-    justifyContent: 'space-between',
-  },
-  trackTileCheck: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  trackTileCode: { color: '#fff', fontSize: 46, fontWeight: '800', lineHeight: 48 },
-  trackTileLabel: { color: 'rgba(255,255,255,0.92)', fontSize: 13, fontWeight: '700' },
-  liveBanner: { borderRadius: 20, padding: 18 },
-  liveTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  liveDotRow: { flexDirection: 'row', alignItems: 'center' },
-  liveBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 0.4 },
-  liveViewersPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
-  liveViewersText: { color: '#fff', fontSize: 11.5, fontWeight: '700', marginLeft: 4 },
-  liveCloseBtn: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 8,
-  },
-  liveMainRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  liveTitle: { color: '#fff', fontSize: 15.5, fontWeight: '700', marginBottom: 3 },
-  liveSubtitle: { color: 'rgba(255,255,255,0.85)', fontSize: 12.5 },
-  liveJoinBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 13,
-    paddingVertical: 12,
-  },
-  liveJoinText: { color: '#fff', fontSize: 13.5, fontWeight: '700', marginRight: 8 },
+  liveBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, paddingVertical: 10, paddingHorizontal: 12 },
+  liveBadgeText: { fontSize: 11.5, fontWeight: '800' },
+  liveViewers: { fontSize: 11.5, fontWeight: '600' },
+  liveTitle: { fontSize: 13.5, fontWeight: '700', marginTop: 2 },
+  liveClose: { padding: 4, marginLeft: 6 },
+  blockTitle: { fontSize: 20.5, fontWeight: '800' },
+  blockSubtitle: { fontSize: 13.5, marginTop: 3, marginBottom: 14 },
+  classCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 24, padding: 16 },
+  classCode: { width: 66, height: 66, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
+  classCodeText: { color: '#fff', fontSize: 22, fontWeight: '900' },
+  classLevel: { color: 'rgba(255,255,255,0.85)', fontSize: 11.5, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  classLabel: { color: '#fff', fontSize: 16.5, fontWeight: '800', marginTop: 2 },
+  classMeta: { color: 'rgba(255,255,255,0.85)', fontSize: 12, marginTop: 4, fontWeight: '600' },
+  classChange: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.18)', alignItems: 'center', justifyContent: 'center' },
+  levelGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
+  levelCell: { width: '50%', padding: 6 },
+  levelTile: { height: 118, borderRadius: 22, padding: 16, justifyContent: 'space-between' },
+  levelLabel: { color: '#fff', fontSize: 17, fontWeight: '800' },
+  levelSub: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '600', marginTop: 2 },
+  offerGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
+  offerCell: { width: '50%', padding: 6 },
+  offerCard: { borderRadius: 22, padding: 14, minHeight: 168 },
+  offerIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  discount: { position: 'absolute', top: 14, right: 14, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
+  discountText: { fontSize: 11.5, fontWeight: '800' },
+  offerTitle: { fontSize: 14.5, fontWeight: '800' },
+  offerDesc: { fontSize: 11.5, marginTop: 3, lineHeight: 15 },
+  offerPrice: { fontSize: 15.5, fontWeight: '800', marginTop: 10 },
+  offerCount: { fontSize: 11, marginTop: 1, fontWeight: '600' },
+  faces: { flexDirection: 'row', marginTop: 12 },
+  bleed: { marginHorizontal: -20, marginBottom: 12 },
+  bleedContent: { paddingHorizontal: 20, paddingBottom: 6 },
+  termChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1.5 },
+  termChipText: { fontSize: 13, fontWeight: '700' },
+  nowDot: { width: 7, height: 7, borderRadius: 4 },
 });

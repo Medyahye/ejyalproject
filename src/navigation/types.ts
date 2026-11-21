@@ -2,6 +2,7 @@ import { NavigatorScreenParams, CompositeScreenProps } from '@react-navigation/n
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { DrawerScreenProps } from '@react-navigation/drawer';
+import type { OfferType } from '../types';
 
 export type AuthStackParamList = {
   Splash: undefined;
@@ -27,9 +28,14 @@ export type StudentStackParamList = {
   CourseDetail: { courseId: string };
   VideoPlayer: { courseId: string; lessonId?: string };
   PdfLibrary: { courseId: string };
+  PdfViewer: { courseId: string; lessonId?: string; uri: string; title: string };
   Favorites: undefined;
   Cart: undefined;
-  Payment: undefined;
+  /** Without params the cart is paid; with params a pack offer (its courses) is paid. */
+  Payment: { offer?: OfferType; courseIds?: string[]; title?: string } | undefined;
+  Teachers: undefined;
+  TeacherProfile: { teacherId: string };
+  Offer: { offer: OfferType; teacherId?: string };
   Settings: undefined;
   LiveRoom: { liveId: string };
 };

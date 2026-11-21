@@ -10,7 +10,6 @@ import { ScreenContainer } from '../../components/layout';
 import { Chip, IconButton, EmptyState, Button } from '../../components/ui';
 import { CourseListItem } from '../../components/course';
 import { CourseLevel, GradeTrack } from '../../types';
-import { GRADE_TRACKS } from '../../constants/gradeTracks';
 import { FEATURES } from '../../constants/features';
 
 type Props = StudentTabScreenProps<'Explore'>;
@@ -26,7 +25,7 @@ const sortOptions: Array<{ id: SortBy; label: string }> = [
 export const CourseListScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
   const { isFavorite, toggleFavorite, refresh } = useStudentData();
-  const { courses, categories } = useCatalog();
+  const { courses, categories, tracks } = useCatalog();
   const [refreshing, setRefreshing] = useState(false);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [level, setLevel] = useState<CourseLevel | null>(null);
@@ -64,12 +63,12 @@ export const CourseListScreen: React.FC<Props> = ({ navigation }) => {
     <View style={{ flex: 1 }}>
       <ScreenContainer edges={['top']}>
         <Animated.View entering={FadeInDown.delay(20).springify()} style={styles.header}>
-          <Text style={[styles.title, { color: theme.colors.text }]}>Explorer les cours</Text>
+          <Text style={[styles.title, { color: theme.colors.text }]}>Explorer</Text>
           <IconButton icon="search-outline" onPress={() => navigation.navigate('Search')} />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(70).springify()} style={styles.toolbar}>
-          <Text style={[styles.resultCount, { color: theme.colors.textSecondary }]}>{filtered.length} cours trouvés</Text>
+          <View />
           {FEATURES.advancedFilters && (
             <Pressable
               onPress={() => setFiltersOpen(true)}
@@ -102,7 +101,6 @@ export const CourseListScreen: React.FC<Props> = ({ navigation }) => {
             <EmptyState
               icon="search-outline"
               title="Aucun cours trouvé"
-              description="Essayez d'ajuster vos filtres de recherche."
               actionLabel={activeFilterCount > 0 ? 'Réinitialiser les filtres' : undefined}
               onAction={activeFilterCount > 0 ? resetFilters : undefined}
             />
@@ -132,7 +130,7 @@ export const CourseListScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>Filière</Text>
               <View style={styles.chipWrap}>
                 <Chip label="Toutes" selected={!gradeTrack} onPress={() => setGradeTrack(null)} />
-                {GRADE_TRACKS.map((track) => (
+                {tracks.map((track) => (
                   <Chip key={track.id} label={track.shortLabel} selected={gradeTrack === track.id} onPress={() => setGradeTrack(track.id)} />
                 ))}
               </View>

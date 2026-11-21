@@ -8,15 +8,16 @@ import { useCatalog } from '../../context/CatalogContext';
 import { ScreenContainer } from '../../components/layout';
 import { EmptyState } from '../../components/ui';
 import { GradeTrack } from '../../types';
-import { getGradeTrackInfo } from '../../constants/gradeTracks';
+import { getLevelInfo } from '../../constants/levels';
 
 type Props = StudentStackScreenProps<'TrackSubjects'>;
 
 export const TrackSubjectsScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme } = useTheme();
   const { track } = route.params;
-  const { categories, courses } = useCatalog();
-  const trackInfo = getGradeTrackInfo(track as GradeTrack);
+  const { categories, courses, getTrack } = useCatalog();
+  const trackInfo = getTrack(track);
+  const levelColor = getLevelInfo(trackInfo?.level)?.gradient[1];
 
   const subjects = useMemo(() => {
     return categories
@@ -34,12 +35,12 @@ export const TrackSubjectsScreen: React.FC<Props> = ({ navigation, route }) => {
           <Ionicons name="arrow-back" size={22} color={theme.colors.text} />
         </Pressable>
         <View
-          style={[styles.trackBadge, { backgroundColor: trackInfo?.color ?? theme.colors.primary }]}
+          style={[styles.trackBadge, { backgroundColor: levelColor ?? theme.colors.primary }]}
         >
           <Text style={styles.trackBadgeCode}>{trackInfo?.code}</Text>
         </View>
         <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={[styles.title, { color: theme.colors.text }]}>{trackInfo?.label ?? 'Filière'}</Text>
+          <Text style={[styles.title, { color: theme.colors.text }]}>{trackInfo?.label ?? 'Classe'}</Text>
           <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>Matières disponibles</Text>
         </View>
       </Animated.View>
@@ -72,7 +73,6 @@ export const TrackSubjectsScreen: React.FC<Props> = ({ navigation, route }) => {
           <EmptyState
             icon="albums-outline"
             title="Aucune matière pour l'instant"
-            description={`Aucun package n'est encore disponible pour ${trackInfo?.shortLabel ?? 'cette filière'}. Reviens bientôt !`}
           />
         }
       />

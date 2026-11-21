@@ -5,16 +5,18 @@ import { useTheme } from '../../theme';
 import { Course } from '../../types';
 import { RatingStars } from '../ui/RatingStars';
 import { ProgressBar } from '../ui/ProgressBar';
-import { formatPrice, formatDuration } from '../../utils/formatters';
+import { formatPrice, formatDuration, formatDateShort } from '../../utils/formatters';
 
 interface CourseListItemProps {
   course: Course;
   onPress?: () => void;
   progress?: number;
   rightAccessory?: React.ReactNode;
+  /** Ordered, waiting for the admin to validate the WhatsApp payment. */
+  pending?: boolean;
 }
 
-export const CourseListItem: React.FC<CourseListItemProps> = ({ course, onPress, progress, rightAccessory }) => {
+export const CourseListItem: React.FC<CourseListItemProps> = ({ course, onPress, progress, rightAccessory, pending }) => {
   const { theme } = useTheme();
 
   return (
@@ -33,24 +35,25 @@ export const CourseListItem: React.FC<CourseListItemProps> = ({ course, onPress,
         <Text numberOfLines={1} style={[styles.teacher, { color: theme.colors.textSecondary }]}>
           {course.teacherName}
         </Text>
-        {typeof progress === 'number' ? (
+        {pending ? (
+          <View style={[styles.statusPill, { backgroundColor: theme.colors.accentLight }]}>
+            <Ionicons name="time-outline" size={12} color={theme.colors.warning} />
+            <Text style={[styles.statusText, { color: theme.colors.warning }]}>En attente de validation</Text>
+          </View>
+        ) : course.isLocked && course.unlockDate ? (
+          <View style={[styles.statusPill, { backgroundColor: theme.colors.backgroundAlt }]}>
+            <Ionicons name="lock-closed" size={11} color={theme.colors.textSecondary} />
+            <Text style={[styles.statusText, { color: theme.colors.textSecondary }]}>Dès le {formatDateShort(course.unlockDate)}</Text>
+          </View>
+        ) : typeof progress === 'number' ? (
           <View style={{ marginTop: 8 }}>
             <ProgressBar progress={progress} height={6} />
-            <Text style={[styles.progressLabel, { color: theme.colors.textMuted }]}>{Math.round(progress * 100)}% terminé</Text>
+            <Text style={[styles.progressLabel, { color: theme.colors.textMuted }]}>{Math.round(progress * 100)} %</Text>
           </View>
-        ) : (
-          <View style={styles.metaRow}>
-            <RatingStars rating={course.rating} size={11} showValue count={course.ratingCount} />
-            <Text style={[styles.metaDot, { color: theme.colors.textMuted }]}>·</Text>
-            <Ionicons name="book-outline" size={12} color={theme.colors.textMuted} />
-            <Text style={[styles.metaText, { color: theme.colors.textMuted }]}>{course.lessons.length} leçons</Text>
-            <Text style={[styles.metaDot, { color: theme.colors.textMuted }]}>·</Text>
-            <Text style={[styles.metaText, { color: theme.colors.textMuted, marginLeft: 0 }]}>{formatDuration(course.durationHours)}</Text>
-          </View>
-        )}
+        ) : null}
       </View>
       {rightAccessory ?? (
-        <Text style={[styles.price, { color: theme.colors.primary }]}>{formatPrice(course.price)}</Text>
+        <Text style={[styles.price, { color: theme.colors.primary }]}>{course.isFree ? 'Offert' : formatPrice(course.price)}</Text>
       )}
     </Pressable>
   );
@@ -67,4 +70,6 @@ const styles = StyleSheet.create({
   metaDot: { fontSize: 11, marginHorizontal: 5 },
   progressLabel: { fontSize: 10.5, marginTop: 4, fontWeight: '600' },
   price: { fontSize: 14, fontWeight: '700', alignSelf: 'flex-start' },
+  statusPill: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 4, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4, marginTop: 7 },
+  statusText: { fontSize: 10.5, fontWeight: '700' },
 });

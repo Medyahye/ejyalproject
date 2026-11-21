@@ -9,15 +9,16 @@ import { ScreenContainer } from '../../components/layout';
 import { CourseListItem } from '../../components/course';
 import { EmptyState } from '../../components/ui';
 import { GradeTrack } from '../../types';
-import { getGradeTrackInfo } from '../../constants/gradeTracks';
+import { getLevelInfo } from '../../constants/levels';
 
 type Props = StudentStackScreenProps<'CategoryCourses'>;
 
 export const CategoryCoursesScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme } = useTheme();
   const { track, categoryId, categoryName } = route.params;
-  const { courses } = useCatalog();
-  const trackInfo = getGradeTrackInfo(track as GradeTrack);
+  const { courses, getTrack } = useCatalog();
+  const trackInfo = getTrack(track);
+  const levelColor = getLevelInfo(trackInfo?.level)?.gradient[1];
 
   const results = useMemo(
     () => courses.filter((c) => c.categoryId === categoryId && c.gradeTracks.includes(track as GradeTrack)),
@@ -32,7 +33,7 @@ export const CategoryCoursesScreen: React.FC<Props> = ({ navigation, route }) =>
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={[styles.title, { color: theme.colors.text }]}>{categoryName}</Text>
-          <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>{trackInfo?.label ?? 'Filière'}</Text>
+          <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>{trackInfo?.label ?? 'Classe'}</Text>
         </View>
       </Animated.View>
 
@@ -54,7 +55,6 @@ export const CategoryCoursesScreen: React.FC<Props> = ({ navigation, route }) =>
           <EmptyState
             icon="albums-outline"
             title="Aucun package pour l'instant"
-            description="Reviens bientôt, de nouveaux packages seront bientôt disponibles."
           />
         }
       />
