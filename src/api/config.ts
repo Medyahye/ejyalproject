@@ -9,4 +9,8 @@
  *     `cloudflared tunnel --url http://localhost:8001` and use the printed
  *     https://*.trycloudflare.com URL. Note it changes every restart.
  */
-export const API_BASE_URL = 'http://192.168.100.104:8001/api';
+const LOCAL_API_URL = 'http://192.168.100.104:8001/api';
+
+// Online server: set EXPO_PUBLIC_API_URL (e.g. in eas.json or .env) to
+// https://<your-host>/api. Falls back to the local server for development.
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || LOCAL_API_URL;
