@@ -1,12 +1,15 @@
-# Render Blueprint: one Django web service + one PostgreSQL database.
-# Render dashboard -> New -> Blueprint -> pick this repository.
+# Render Blueprint (free plan): Django web service.
+# Database: free PostgreSQL on Neon (neon.tech) -> paste its connection string
+# as DATABASE_URL when Render asks for it.
+# Free plan note: the server sleeps after 15 min without traffic; the next
+# request wakes it up in ~1 minute.
 services:
   - type: web
     name: generations-api
     runtime: docker
     rootDir: backend
     dockerfilePath: ./Dockerfile
-    plan: starter
+    plan: free
     region: frankfurt
     healthCheckPath: /api/settings/
     envVars:
@@ -22,14 +25,7 @@ services:
         value: "True"
       - key: SEED_DEMO
         value: "1"
+      - key: WEB_CONCURRENCY
+        value: "2"
       - key: DATABASE_URL
-        fromDatabase:
-          name: generations-db
-          property: connectionString
-
-databases:
-  - name: generations-db
-    databaseName: generations
-    user: generations
-    plan: basic-256mb
-    region: frankfurt
+        sync: false
