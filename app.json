@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Générations du Futur",
+    "name": "Generations du Futur",
     "slug": "generations-du-futur",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,7 +13,8 @@
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": [
           "whatsapp"
-        ]
+        ],
+        "CFBundleDisplayName": "Générations du Futur"
       }
     },
     "android": {
@@ -34,11 +35,6 @@
       "expo-font",
       "expo-video"
     ],
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "extra": {
       "eas": {
         "projectId": "050cb1b7-78ce-472b-a4a8-89de8bc9bd89"
